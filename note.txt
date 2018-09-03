@@ -1,0 +1,16 @@
+- length of data
+- ppu address
+- flags
+- tile indexes
+==============
+
+do countdown
+    load countdown state (number displayed)
+    load jump address from table for current state
+    push address to stack
+    rts to address from table
+
+state subs:
+    read read data packet and put it on queue
+
+
