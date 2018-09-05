@@ -8,9 +8,7 @@
 ;       draw game over
 ;           reset to title on start pushed
 ;   pause on start pressed
-;       swap BG palettes to be more muted
 ;       write "PAUSE" on screen
-;   improve computer player
 ;   improve collision detection
 
     .rsset $0000
@@ -35,6 +33,8 @@ controller1Old  .rs 1
 controller2Old  .rs 1
 
 controllerTmp   .rs 1
+compController  .rs 1
+frameOdd        .rs 1
 
 ; countdown timer for ball
 start_count .rs 1
@@ -57,7 +57,11 @@ GameState       .rs 1
 GSUpdateNeeded  .rs 1
 ;NewGameState    .rs 1
 
-TitleSelected .rs 1
+TitleSelected   .rs 1
+GamePaused      .rs 1
+
+btnPressedMask      .rs 1   ; the button to check
+;btnPressedReturn    .rs 1   ; return value
 
 ; ---------------------------
 ; Constants
@@ -94,6 +98,9 @@ TitleCursor = $0200
 ; Background tile update queue
 BG_QUEUE    = $0300
 
+CurrentPalette      = $0500
+CurrentAttributes   = $0520
+
 ; Button Constants
 BUTTON_A        = 1 << 7
 BUTTON_B        = 1 << 6
@@ -108,69 +115,63 @@ BUTTON_RIGHT    = 1 << 0
     .bank 0
     .org $8000
 RESET:
-    SEI         ; Disable IRQs
-    CLD         ; Disable decimal mode
+    sei         ; Disable IRQs
+    cld         ; Disable decimal mode
 
-    LDX #$40
-    STX $4017   ; Disable APU frame IRQ
+    ldx #$40
+    stx $4017   ; Disable APU frame IRQ
 
-    LDX #$FF
-    TXS         ; Setup new stack
+    ldx #$FF
+    txs         ; Setup new stack
 
-    INX         ; Now X = 0
+    inx         ; Now X = 0
 
-    STX $2000   ; disable NMI
-    STX $2001   ; disable rendering
-    STX $4010   ; disable DMC IRQs
+    stx $2000   ; disable NMI
+    stx $2001   ; disable rendering
+    stx $4010   ; disable DMC IRQs
 
 vblankwait1:   ; First wait for VBlank to make sure PPU is ready.
     BIT $2002   ; test this bit with ACC
     BPL vblankwait1 ; Branch on result plus
 
 clrmem:
-    LDA #$00
-    STA $0000, x
-    STA $0100, x
-    STA $0200, x
-    STA $0300, x
-    STA $0400, x
-    STA $0500, x
-    STA $0600, x
-    STA $0700, x
+    lda #$00
+    sta $0000, x
+    sta $0100, x
+    sta $0200, x
+    sta $0300, x
+    sta $0400, x
+    sta $0500, x
+    sta $0600, x
+    sta $0700, x
 
-    INX
-    BNE clrmem  ; loop if != 0
+    inx
+    bne clrmem  ; loop if != 0
 
 vblankwait2:    ; Second wait for vblank.  PPU is ready after this
-    BIT $2002
-    BPL vblankwait2
+    bit $2002
+    bpl vblankwait2
 
     lda #%10010000
     sta $2000   ; enable NMI, sprites from pattern table 0
 
-    lda $2002   ; read PPU status to reset high/low latch to high
-    lda #$3F
-    sta $2006   ; Write high byte of $3F00 address
-    lda #$00
-    sta $2006   ; Write low byte of $3F00 address
 
 ; Load the palettes
     ldx #$00
 LoadPaletteLoop:
     lda PaletteData, x  ; Load data from address (PaletteData + X)
-    sta $2007
+    sta CurrentPalette, x
     inx
     cpx #32    ; Each Palette is four bytes.  Eight Palettes total.  4 * 8 = 32 bytes.
     bne LoadPaletteLoop
+    ;jsr UpdatePalette
 
     lda #GS_TITLE
-    ;lda #GS_DED
-    ;lda #GS_GAME
     sta GameState
     jsr UpdateGameState
 
 DoFrame:
-    JSR ReadControllers
+    jsr ReadControllers
     lda GameState
     cmp #GS_GAME
     bcc frameGameOver
@@ -181,8 +182,15 @@ frameTitle:
     jmp frameEnd
 
 frameGameplay:
+    lda GamePaused
+    bne framePaused
+
     jsr UpdatePlayers
     jsr UpdateBall
+    jmp frameEnd
+
+framePaused:
+    jsr CheckPause
     jmp frameEnd
 
 frameGameOver:
@@ -201,27 +209,55 @@ WaitLoop:
     bne WaitLoop
     jmp DoFrame
 
+CheckPause:
+    lda #BUTTON_START
+    sta btnPressedMask
+    jsr ButtonPressedP1
+    bne uPauseToggle
+    rts
+
+uPauseToggle:
+    lda GamePaused
+    beq uSetPause
+
+    lda #0
+    sta GamePaused
+
+    ldx #$00
+uUnPauseLoop:
+    lda PaletteData, x
+    sta CurrentPalette, x
+    inx
+    cpx #32
+    bne uUnPauseLoop
+    rts
+
+uSetPause:
+    lda #1
+    sta GamePaused
+
+    ldx #$00
+uSetPauseLoop:
+    lda PausedPalette, x
+    sta CurrentPalette, x
+    inx
+    cpx #32
+    bne uSetPauseLoop
+    rts
+
+; ---------------------------
+; Get updates for title screen
+; ---------------------------
 UpdateTitle:
     jsr titleSelect
 
-    ; read for start
-    lda controller1
-    and #BUTTON_START
-    sta controllerTmp
-
-    lda controller1Old
-    and #BUTTON_START
-
-    cmp controllerTmp
-    bne utitle_stb
-    rts
-
-; last frame != this frame
-utitle_stb:
-    lda controllerTmp
+    lda #BUTTON_START
+    sta btnPressedMask
+    jsr ButtonPressedP1
     bne utitle_stc
     rts
 
+; start pressed this frame
 utitle_stc:
     lda #GS_GAME
     sta GameState
@@ -233,23 +269,13 @@ titleSelect:
     ; prev frame = 0
     ; this frame = 1
     ; do thing
-    lda controller1
-    and #BUTTON_SELECT
-    sta controllerTmp
-
-    lda controller1Old
-    and #BUTTON_SELECT
-
-    cmp controllerTmp
-    bne utitle_b
-    rts
-
-; last frame != this frame
-utitle_b:
-    lda controllerTmp
+    lda #BUTTON_SELECT
+    sta btnPressedMask
+    jsr ButtonPressedP1
     bne utitle_c
     rts
 
+; button was pressed
 utitle_c:
     lda TitleSelected
     beq utitle_sel_2p
@@ -261,7 +287,8 @@ utitle_c:
     sta TitleCursor
     rts
 
-utitle_sel_2p
+; 2 player game mode selected
+utitle_sel_2p:
     ; 2 player
     lda #$01
     sta TitleSelected
@@ -439,36 +466,68 @@ NMI:
     TYA
     PHA
 
-    LDA bg_ready
-    BEQ NMI_END
-
-    jsr UpdateBackground
-    jsr DrawScores
-
-NMI_END:
-    ; Stuff here
+    lda $2002   ; read PPU status to reset high/low latch to high
     ; Transfer sprite data
     LDA #$00
     STA $2003
     LDA #$02
     STA $4014
 
+    lda #$3F
+    sta $2006   ; Write high byte of $3F00 address
+    lda #$00
+    sta $2006   ; Write low byte of $3F00 address
+
+    ldx #0
+uPaletteLoop:
+    lda CurrentPalette, x
+    sta $2007
+    inx
+    cpx #32    ; Each Palette is four bytes.  Eight Palettes total.  4 * 8 = 32 bytes.
+    bne uPaletteLoop
+
+
+    LDA bg_ready
+    BEQ NMI_END
+
+    jsr UpdateBackground
+    jsr DrawScores
+    jsr UpdateAttributeData
+
+NMI_END:
     ; Reset scroll
-    LDA #$00
-    STA $2005
-    STA $2005
+    bit $2002
+    lda #$00
+    sta $2005
+    sta $2005
 
     LDA #0
     STA sleeping
 
     ; Restore registers
-    PLA
-    TAY
-    PLA
-    TAX
-    PLA
+    pla
+    tay
+    pla
+    tax
+    pla
 
-    RTI
+    rti
+
+UpdateAttributeData:
+    bit $2002
+    lda #$23
+    sta $2006
+    lda #$C0
+    sta $2006
+
+    ldx #0
+uAttrDataLoop:
+    lda CurrentAttributes, x
+    sta $2007
+    inx
+    cpx #64
+    bne uAttrDataLoop
+    rts
 
 UpdateBackground:
     LDX #0
@@ -626,6 +685,8 @@ readJoy_done:
     RTS
 
 UpdatePlayers:
+    jsr CheckPause
+
     ; Player 1
     LDA #BUTTON_UP
     BIT controller1
@@ -863,6 +924,9 @@ cd_00:
     LDA #'T'
     STA BG_QUEUE+8
 
+    LDA #0
+    STA BG_QUEUE+9
+
     DEC start_ticks
     LDA start_ticks
     cmp #0
@@ -899,6 +963,9 @@ cd_01:
     LDA #'1'
     STA BG_QUEUE+5
 
+    LDA #0
+    STA BG_QUEUE+6
+
     DEC start_ticks
     LDA start_ticks
     cmp #0
@@ -933,6 +1000,9 @@ cd_02:
     STA BG_QUEUE+4
     LDA #'2'
     STA BG_QUEUE+5
+
+    LDA #0
+    STA BG_QUEUE+6
 
     DEC start_ticks
     LDA start_ticks
@@ -969,6 +1039,9 @@ cd_03:
     LDA #'3'
     STA BG_QUEUE+5
 
+    LDA #0
+    STA BG_QUEUE+6
+
     DEC start_ticks
     LDA start_ticks
     cmp #0
@@ -982,6 +1055,13 @@ cd_03:
 cd_03_nochange:
     rts
 
+ComputerOdd:
+    lda compController
+    sta controller2
+
+    inc frameOdd
+    rts
+
 Computer_Move:
 ; Move p2's paddle
 ;   if ball is moving right
@@ -990,46 +1070,56 @@ Computer_Move:
 ;       else if ball y > p2_paddle_bottom y
 ;           press "DOWN" button
 
+    lda frameOdd
+    cmp #5
+    bne ComputerOdd
+
     ; Clear controller input
-    LDA #$00
-    STA controller2
+    lda #$00
+    sta controller2
+    sta compController
 
     ; Ball moving right?
-    LDA #1
-    CMP BallLeft
-    BEQ Computer_Done
+    lda #1
+    cmp BallLeft
+    beq Computer_Done
 
     ; ball past half of screen?
-    LDA BallX
-    CMP #$88
-    BCC Computer_Done
+    lda BallX
+    cmp #$88
+    bcc Computer_Done
 
     ; if ball y < p2_paddle y
     ; use the inner two sprites to determine movement
-    LDA P2_TOP
+    lda P2_TOP
     ;SEC
     ;SBC #8
-    CMP BallY
-    BCC Computer_MoveDown
+    cmp BallY
+    bcc Computer_MoveDown
 
-    LDA P2_BOTTOM
+    lda P2_BOTTOM
     ;CLC
     ;ADC #8
-    CMP BallY
-    BCS Computer_MoveUp
+    cmp BallY
+    bcs Computer_MoveUp
     jmp Computer_Done
 
 ; Don't move the paddle directly, just press the buttons
 Computer_MoveUp:
-    LDA #BUTTON_UP
-    STA controller2
-    JMP Computer_Done
+    lda #BUTTON_UP
+    sta controller2
+    sta compController
+    jmp Computer_Done
 
 Computer_MoveDown:
-    LDA #BUTTON_DOWN
-    STA controller2
+    lda #BUTTON_DOWN
+    sta controller2
+    sta compController
 
 Computer_Done:
+    ;dec frameOdd
+    lda #0
+    sta frameOdd
     rts
 
 ; ---------------------------
@@ -1237,17 +1327,19 @@ titleBoxBottom:
     lda #'R'
     sta $2007
 
-    lda #$23
-    sta $2006
-    lda #$C0
-    sta $2006
+    ;lda #$23
+    ;sta $2006
+    ;lda #$C0
+    ;sta $2006
 
-    ldx #64
+    ldx #0
 titleLoadAttrLoop:
     ;lda AttributeData, x
     lda #$55
-    sta $2007
-    dex
+    ;sta $2007
+    sta CurrentAttributes, x
+    inx
+    cpx #64
     bne titleLoadAttrLoop
 
 ; Load sprites
@@ -1326,20 +1418,22 @@ IncHighByte
     jmp LoadBGTopLoop
 
 BGLoopDone:
+    ;rts
 
 ; Load Attributes
 ;LoadAttribute:
-    lda $2002   ; read PPU status to reset high/low latch
-    lda #$23
-    sta $2006   ; write high byte of $23C0 address
-    lda #$C0
-    sta $2006   ; write low byte of $23C0 address
+    ;lda $2002   ; read PPU status to reset high/low latch
+    ;lda #$23
+    ;sta $2006   ; write high byte of $23C0 address
+    ;lda #$C0
+    ;sta $2006   ; write low byte of $23C0 address
 
     ldx #$00
 LoadAttrLoop:
     lda AttributeData, x
     ;lda #$00
-    sta $2007
+    ;sta $2007
+    sta CurrentAttributes, x
     inx
     cpx #64
     bne LoadAttrLoop
@@ -1381,6 +1475,46 @@ ClearSpriteLoop:
     bne ClearSpriteLoop
     rts
 
+; Was a button pressed this frame?
+ButtonPressedP1:
+    ;lda #0
+    ;sta btnPressedReturn
+
+    ; read for start
+    lda controller1
+    and btnPressedMask
+    sta controllerTmp
+
+    lda controller1Old
+    and btnPressedMask
+
+    cmp controllerTmp
+    bne btnPress_stb
+
+    ; no button change
+    rts
+
+btnPress_stb:
+    ; button released
+    lda controllerTmp
+    bne btnPress_stc
+    rts
+
+btnPress_stc:
+    ; button pressed
+    lda #1 ; HERE
+    rts
+    ;bne btnPressTrue
+
+;btnPressFalse
+    ;lda #0
+    ;rts
+
+;btnPressTrue:
+;    lda #1
+;    ;sta btnPressedReturn
+;    rts
+
 ; --------
     .bank 1
     .org $E000
@@ -1420,10 +1554,12 @@ CountdownData_03:
     .db $02, $20, $AE, $00, '0', '3'
 
 PaletteData:
-    ; background palette
-    .db $0F,$24,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
-    ; sprite palette
+    .db $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
     .db $0F,$10,$00,$30, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
+
+PausedPalette:
+    .db $0F,$14,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$01,$01,$01
+    .db $0F,$00,$2D,$10, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
 
 AttributeData:
     .db $0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
