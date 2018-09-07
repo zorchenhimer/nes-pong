@@ -486,7 +486,6 @@ uPaletteLoop:
     cpx #32    ; Each Palette is four bytes.  Eight Palettes total.  4 * 8 = 32 bytes.
     bne uPaletteLoop
 
-
     LDA bg_ready
     BEQ NMI_END
 
@@ -886,6 +885,9 @@ cd_reset:
 
     LDA #$00
     STA BG_QUEUE+4
+
+    LDA #$00
+    STA BG_QUEUE+5
 
     LDA #ST_RUNNING
     STA start_count
