@@ -13,4 +13,35 @@ do countdown
 state subs:
     read read data packet and put it on queue
 
+packet loading/transfer
 
+p = queue pointer
+loop:
+    l = packet length
+    if l = 0
+        rts
+    p = l
+    p++
+
+    p = ppuHigh
+    p++
+    p = ppuLow
+    p++
+
+    f = flags
+    p = flags
+    p++
+
+    if f.runlength
+        r = f.runlength
+        p = data
+        p++
+        goto loop
+
+    innerloop:
+        p = data
+        p++
+        l--
+
+        if l = 0
+            goto loop

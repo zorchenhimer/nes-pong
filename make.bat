@@ -1,5 +1,5 @@
 @echo off
-..\..\nesasm3.exe .\pong.asm && perl ..\..\nes-symbols.pl pong.fns
+..\..\nesasm\nesasm.exe .\pong.asm && perl ..\..\nes-symbols.pl pong.fns
 
 REM l:\fceux\fceux.exe pong.nes
 

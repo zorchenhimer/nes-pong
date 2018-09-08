@@ -10,106 +10,10 @@
 ;   pause on start pressed
 ;       write "PAUSE" on screen
 ;   improve collision detection
+;   fix scores
+;       counting above 9 or 19 is borked
 
-    .rsset $0000
-bg_ready    .rs 1   ; When not ready, PPU is off
-sp_ready    .rs 1   ; Sprite ready?
-
-; Moving up or left?
-BallUp      .rs 1
-BallLeft    .rs 1
-
-BallSpeedX  .rs 1
-BallSpeedY  .rs 1
-
-p1Score     .rs 1
-p2Score     .rs 1
-
-sleeping    .rs 1
-
-controller1     .rs 1
-controller2     .rs 1
-controller1Old  .rs 1
-controller2Old  .rs 1
-
-controllerTmp   .rs 1
-compController  .rs 1
-frameOdd        .rs 1
-
-; countdown timer for ball
-start_count .rs 1
-ST_3        = 4
-ST_2        = 3
-ST_1        = 2
-ST_0        = 1
-ST_RUNNING  = 0
-ST_LENGTH   = 45;$1E
-
-start_ticks .rs 1
-start_addr  .rs 2
-
-flag_tmp    .rs 1
-
-; 2 - Title
-; 1 - Game
-; 0 - Game Over
-GameState       .rs 1
-GSUpdateNeeded  .rs 1
-;NewGameState    .rs 1
-
-TitleSelected   .rs 1
-GamePaused      .rs 1
-
-btnPressedMask      .rs 1   ; the button to check
-;btnPressedReturn    .rs 1   ; return value
-
-; ---------------------------
-; Constants
-; ---------------------------
-GS_TITLE    = 2
-GS_GAME     = 1
-GS_DED      = 0
-
-; Ball playfield bounds
-WALL_RIGHT  = $F4
-WALL_LEFT   = $04
-WALL_TOP    = $0F
-WALL_BOTTOM = $D6
-
-PADDLE_SPEED        = $04
-; Paddle playfield bounds
-WALL_TOP_PADDLE     = $13
-WALL_BOTTOM_PADDLE  = $C0
-
-; Object Addresses
-P1_TOP      = $0204
-P1_LEFT     = $0207
-P1_BOTTOM   = $0210
-
-P2_TOP      = $0214
-P2_LEFT     = $0217
-P2_BOTTOM   = $0220
-
-BallX       = $0203
-BallY       = $0200
-
-TitleCursor = $0200
-
-; Background tile update queue
-BG_QUEUE    = $0300
-
-CurrentPalette      = $0500
-CurrentAttributes   = $0520
-
-; Button Constants
-BUTTON_A        = 1 << 7
-BUTTON_B        = 1 << 6
-BUTTON_SELECT   = 1 << 5
-BUTTON_START    = 1 << 4
-BUTTON_UP       = 1 << 3
-BUTTON_DOWN     = 1 << 2
-BUTTON_LEFT     = 1 << 1
-BUTTON_RIGHT    = 1 << 0
+    .include "ram.asm"
 
     ; Main code
     .bank 0
@@ -296,167 +200,6 @@ utitle_sel_2p:
     sta TitleCursor
     rts
 
-; ---------------------------
-; Update the ball, incl bounce
-; ---------------------------
-UpdateBall:
-    ; Are we counting down?
-    LDA start_count
-    bne DoCountdown_jmp
-    ; nope
-    jmp updateBall_ok
-
-; Countdown is active, don't move ball
-DoCountdown_jmp:
-    jmp DoCountdown
-
-; "Start" is displayed, but ball is moving.
-update_ball_start_check:
-    LDA start_count
-    CMP #ST_1
-    BCS jmp_BallUpdateDone
-    jmp updateBall_ok
-
-jmp_BallUpdateDone:
-    jmp BallUpdateDone
-
-; Normal ball movement
-updateBall_ok:
-    LDA BallUp
-    BEQ MoveBallDown
-
-    ; Move Up
-    LDA BallY
-    SEC
-    SBC BallSpeedY
-    STA BallY
-
-    ; Check bounce
-    CMP #WALL_TOP
-    BCS UpdateBallHoriz
-
-    LDA #0
-    STA BallUp
-
-    JMP UpdateBallHoriz
-
-MoveBallDown:
-    ; Move Down
-    LDA BallY
-    CLC
-    ADC BallSpeedY
-    STA BallY
-
-    CMP #WALL_BOTTOM
-    BCC UpdateBallHoriz
-
-    LDA #1
-    STA BallUp
-
-UpdateBallHoriz:
-    LDA BallLeft
-    BEQ MoveBallRight
-
-    ; Move Left
-    LDA BallX
-    SEC
-    SBC BallSpeedX
-    STA BallX
-
-    ;if BallY < P1_TOP - ball above paddle
-    LDA BallY
-    CLC
-    ADC #8
-    CMP P1_TOP
-    BCC BallCheckLeftWall   ; no paddle
-
-    ; if BallY > (P1_Bottom + 8) - ball lower than paddle
-    SEC
-    SBC #16
-    CMP P1_BOTTOM
-    BNE ballycheck1
-    JMP BallCheckLeftWall
-ballycheck1:
-    BCS BallCheckLeftWall
-    ; ball is in vertical box
-
-    LDA P1_LEFT
-    CLC
-    ADC #8
-    CMP BallX
-    BNE ballxcheck3
-    JMP BallCheckLeftWall
-ballxcheck3:
-    BCS ballxcheck4
-    JMP BallCheckLeftWall
-ballxcheck4:
-    ; ball is in paddle
-    LDA #0
-    STA BallLeft
-    JMP BallUpdateDone
-
-BallCheckLeftWall:
-    LDA BallX
-    CMP #WALL_LEFT
-    BCS BallUpdateDone
-
-    INC p2Score
-    JSR ResetBall
-    LDA #0
-    STA BallLeft
-
-    JMP BallUpdateDone
-
-MoveBallRight:
-    ; Move right
-    LDA BallX
-    CLC
-    ADC BallSpeedX
-    STA BallX
-
-    ; if bally < P2_Top - ball is above paddle
-    LDA BallY
-    CLC
-    ADC #8
-    CMP P2_TOP
-    BCC BallCheckRightWall ; no paddle
-
-    ; if BallY > (P2_Bottom + 8) - ball lower than paddle
-    SEC
-    SBC #16
-    CMP P2_BOTTOM
-    BNE ballycheck2
-    JMP BallCheckRightWall
-ballycheck2:
-    BCS BallCheckRightWall
-
-    ; ball is in vertical box
-    LDA P2_LEFT
-    SEC
-    SBC #8
-    CMP BallX
-    BCC ballp2bounce    ; Bounce off paddle if less ballx < (P2_left - 8)
-    JMP BallCheckRightWall
-
-    ; ball is in paddle
-ballp2bounce:
-    LDA #1
-    STA BallLeft
-    JMP BallUpdateDone
-
-BallCheckRightWall:
-    LDA BallX
-    CMP #WALL_RIGHT
-    BCC BallUpdateDone
-
-    INC p1Score
-    JSR ResetBall
-    LDA #1
-    STA BallLeft
-
-BallUpdateDone:
-    RTS
-
 ; vblank triggered
 NMI:
     ; Backup registers
@@ -473,6 +216,7 @@ NMI:
     LDA #$02
     STA $4014
 
+    ; load the palette
     lda #$3F
     sta $2006   ; Write high byte of $3F00 address
     lda #$00
@@ -513,6 +257,17 @@ NMI_END:
     rti
 
 UpdateAttributeData:
+    lda dirty_flags
+    and #D_ATTRIBUTE
+    bne uattr_Ok
+    rts
+
+uattr_Ok:
+    ; turn off dirty attribute flag
+    lda dirty_flags
+    and #%11111110
+    sta dirty_flags
+
     bit $2002
     lda #$23
     sta $2006
@@ -529,60 +284,80 @@ uAttrDataLoop:
     rts
 
 UpdateBackground:
-    LDX #0
-BG_LOOP:    ; loop once per data packet
-    LDA BG_QUEUE, x
-    ; 1st Byte is length
-    CMP #0
-    BEQ BG_LOOP_DONE    ; no tiles to update
-    tay ; length in Y
+    ; start at the beginning of queue
+    ; low byte first
+    lda #$00
+    sta dcQueuePointer
 
-    BIT $2002   ; read PPU status to reset high/low latch
+    lda #$03
+    sta dcQueuePointer+1
 
-    ; PPU High byte
-    inx
-    LDA BG_QUEUE, x
-    STA $2006
+    bit $2002
 
-    ; PPU Low byte
-    inx
-    LDA BG_QUEUE, x
-    STA $2006
+ubOuterLoop:
+    ldy #0
+    ; packet length
+    lda [dcQueuePointer], Y
+    sta dcPacketLength
+
+    bne ubContinue
+    rts
+
+ubContinue:
+    ; PPU Addresses
+    iny
+    lda [dcQueuePointer], Y
+    sta $2006
+
+    iny
+    lda [dcQueuePointer], Y
+    sta $2006
 
     ; flags
-    inx
-    lda BG_QUEUE, x
-    STA flag_tmp
-    BIT flag_tmp
-    BMI BG_Tile_Runlength   ; if bit 7 is set, it's runlength
+    iny
+    lda [dcQueuePointer], Y
+    sta dcFlags
+    bit dcFlags
+    bmi ubRunLength
 
-    inx
-; loop through all the tiles in packet
-BG_Tile_Loop:
-    dey
-    LDA BG_QUEUE, x
-    STA $2007
-    inx
-    cpy #$00
-    BNE BG_Tile_Loop
+ubDataLoop:
+   iny
+   lda [dcQueuePointer], Y
+   sta $2007
+   dec dcPacketLength
+   bne ubDataLoop
+   ; TODO update dcQueuePointer
+   tya
+   clc
+   adc #4
+   adc dcQueuePointer
+   sta dcQueuePointer
 
-    ; go to the next packet
-    jmp BG_LOOP
+   lda dcQueuePointer+1
+   adc #0
+   sta dcQueuePointer+1
 
-BG_Tile_Runlength:
-    inx
-    LDA BG_QUEUE, x
-bg_runlength_loop:
-    dey
-    STA $2007
-    cpy #$00
-    BNE bg_runlength_loop
+   jmp ubOuterLoop
 
-    ; go to the next packet
-    jmp BG_LOOP
+ubRunLength:
+    iny
+    ldx dcPacketLength
+    lda [dcQueuePointer], Y
 
-BG_LOOP_DONE:
-    rts
+ubRunLengthLoop:
+    sta $2007
+    dex
+    bne ubRunLengthLoop
+    ; TODO updateQueuePointer
+    lda dcQueuePointer
+    clc
+    adc #5
+    sta dcQueuePointer
+
+    lda dcQueuePointer+1
+    adc #0
+    sta dcQueuePointer+1
+    jmp ubOuterLoop
 
 DrawScores:
     lda GameState
@@ -646,42 +421,6 @@ draw_p2_digit:
     STA $2007
     rts
 
-ReadControllers:
-    lda controller1
-    sta controller1Old
-
-    lda controller2
-    sta controller2Old
-
-    ; Freeze input
-    LDA #1
-    STA $4016
-    LDA #0
-    STA $4016
-
-    LDX #$08
-ReadJoy1:
-    LDA $4016
-    LSR A           ; Bit0 -> Carry
-    ROL controller1 ; Bit0 <- Carry
-    DEX
-    BNE ReadJoy1
-
-    LDX #$08
-ReadJoy2:
-    LDA $4017
-    LSR A           ; Bit0 -> Carry
-    ROL controller2    ; Bit0 <- Carry
-    DEX
-    BNE ReadJoy2
-
-    lda TitleSelected
-    cmp #0
-    bne readJoy_done
-    jsr Computer_Move
-
-readJoy_done:
-    RTS
 
 UpdatePlayers:
     jsr CheckPause
@@ -827,662 +566,8 @@ P2MoveDown:
     STA $0220
     rts
 
-; ---------------------------
-; Put the ball back in the
-; center of the playfield
-; ---------------------------
-ResetBall:
-    LDA #$00
-    ;STA BallUp
-    STA BallLeft
-
-    LDA #$02
-    STA BallSpeedX
-    STA BallSpeedY
-
-    LDA #$78
-    STA BallX
-    STA BallY
-
-    ; Start a countdown
-    LDA #ST_3
-    STA start_count
-    LDA #ST_LENGTH
-    STA start_ticks
-    rts
-
-; ---------------------------
-; Draw the countdown on
-; screen
-; ---------------------------
-; TODO: read the packets from CountdownData labels
-DoCountdown:
-    LDA start_count
-    asl a
-    tax
-    lda Countdown_Table+1, x
-
-    pha
-    lda Countdown_Table, x
-    pha
-    rts
-
-; clear the text off screen, we're running already
-cd_reset:
-    ; data length
-    LDA #$05
-    STA BG_QUEUE
-
-    ; PPU address
-    LDA #$20
-    STA BG_QUEUE+1
-    LDA #$AE
-    STA BG_QUEUE+2
-
-    ; flags
-    LDA #%10000000
-    STA BG_QUEUE+3
-
-    LDA #$00
-    STA BG_QUEUE+4
-
-    LDA #$00
-    STA BG_QUEUE+5
-
-    LDA #ST_RUNNING
-    STA start_count
-    jmp update_ball_start_check
-    rts
-
-; "start" text
-cd_00:
-    LDA start_ticks
-    CMP #1
-    BEQ cd_reset
-
-    ; data length
-    LDA #$05
-    STA BG_QUEUE
-
-    ; PPU address
-    LDA #$20
-    STA BG_QUEUE+1
-    LDA #$AE
-    STA BG_QUEUE+2
-
-    ; flags
-    LDA #$00
-    STA BG_QUEUE+3
-
-    ; the text "03"
-    LDA #'S'
-    STA BG_QUEUE+4
-    LDA #'T'
-    STA BG_QUEUE+5
-    LDA #'A'
-    STA BG_QUEUE+6
-    LDA #'R'
-    STA BG_QUEUE+7
-    LDA #'T'
-    STA BG_QUEUE+8
-
-    LDA #0
-    STA BG_QUEUE+9
-
-    DEC start_ticks
-    LDA start_ticks
-    cmp #0
-    BNE cd_00_nochange
-
-    LDA #ST_LENGTH
-    STA start_ticks
-    LDA #ST_RUNNING
-    STA start_count
-
-cd_00_nochange:
-    jmp update_ball_start_check
-    ;rts
-
-; "01" text
-cd_01:
-    ; data length
-    LDA #$02
-    STA BG_QUEUE
-
-    ; PPU address
-    LDA #$20
-    STA BG_QUEUE+1
-    LDA #$AE
-    STA BG_QUEUE+2
-
-    ; flags
-    LDA #$00
-    STA BG_QUEUE+3
-
-    ; the text "03"
-    LDA #'0'
-    STA BG_QUEUE+4
-    LDA #'1'
-    STA BG_QUEUE+5
-
-    LDA #0
-    STA BG_QUEUE+6
-
-    DEC start_ticks
-    LDA start_ticks
-    cmp #0
-    BNE cd_01_nochange
-
-    LDA #ST_LENGTH
-    STA start_ticks
-    LDA #ST_0
-    STA start_count
-
-cd_01_nochange:
-    rts
-
-; "02" text
-cd_02:
-    ; data length
-    LDA #$02
-    STA BG_QUEUE
-
-    ; PPU address
-    LDA #$20
-    STA BG_QUEUE+1
-    LDA #$AE
-    STA BG_QUEUE+2
-
-    ; flags
-    LDA #$00
-    STA BG_QUEUE+3
-
-    ; the text "03"
-    LDA #'0'
-    STA BG_QUEUE+4
-    LDA #'2'
-    STA BG_QUEUE+5
-
-    LDA #0
-    STA BG_QUEUE+6
-
-    DEC start_ticks
-    LDA start_ticks
-    cmp #0
-    BNE cd_02_nochange
-
-    LDA #ST_LENGTH
-    STA start_ticks
-    LDA #ST_1
-    STA start_count
-
-cd_02_nochange:
-    rts
-
-; "03" text
-cd_03:
-    ; data length
-    LDA #$02
-    STA BG_QUEUE
-
-    ; PPU address
-    LDA #$20
-    STA BG_QUEUE+1
-    LDA #$AE
-    STA BG_QUEUE+2
-
-    ; flags
-    LDA #$00
-    STA BG_QUEUE+3
-
-    ; the text "03"
-    LDA #'0'
-    STA BG_QUEUE+4
-    LDA #'3'
-    STA BG_QUEUE+5
-
-    LDA #0
-    STA BG_QUEUE+6
-
-    DEC start_ticks
-    LDA start_ticks
-    cmp #0
-    BNE cd_03_nochange
-
-    LDA #ST_LENGTH
-    STA start_ticks
-    LDA #ST_2
-    STA start_count
-
-cd_03_nochange:
-    rts
-
-ComputerOdd:
-    lda compController
-    sta controller2
-
-    inc frameOdd
-    rts
-
-Computer_Move:
-; Move p2's paddle
-;   if ball is moving right
-;       if ball y < p2_paddle y
-;           press "UP" button (mimic the controller)
-;       else if ball y > p2_paddle_bottom y
-;           press "DOWN" button
-
-    lda frameOdd
-    cmp #5
-    bne ComputerOdd
-
-    ; Clear controller input
-    lda #$00
-    sta controller2
-    sta compController
-
-    ; Ball moving right?
-    lda #1
-    cmp BallLeft
-    beq Computer_Done
-
-    ; ball past half of screen?
-    lda BallX
-    cmp #$88
-    bcc Computer_Done
-
-    ; if ball y < p2_paddle y
-    ; use the inner two sprites to determine movement
-    lda P2_TOP
-    ;SEC
-    ;SBC #8
-    cmp BallY
-    bcc Computer_MoveDown
-
-    lda P2_BOTTOM
-    ;CLC
-    ;ADC #8
-    cmp BallY
-    bcs Computer_MoveUp
-    jmp Computer_Done
-
-; Don't move the paddle directly, just press the buttons
-Computer_MoveUp:
-    lda #BUTTON_UP
-    sta controller2
-    sta compController
-    jmp Computer_Done
-
-Computer_MoveDown:
-    lda #BUTTON_DOWN
-    sta controller2
-    sta compController
-
-Computer_Done:
-    ;dec frameOdd
-    lda #0
-    sta frameOdd
-    rts
-
-; ---------------------------
-; Gamestate change dispatch
-; subroutine
-; ---------------------------
-UpdateGameState:
-    lda #0
-    sta GSUpdateNeeded
-
-    jsr ClearSprites
-
-    lda GameState   ; load gamestate
-    asl a           ; multiply by two
-    tax             ; use it as an index
-
-    ; low byte first
-    lda GameState_Table+1, x
-    pha
-
-    ; then high byte
-    lda GameState_Table, x
-    pha
-
-    ; Jump to sub-subroutine
-    rts
-
-; -------------------------
-; Load Title gamestate
-; -------------------------
-gsTitle:
-    LDA $2002   ; read PPU status to reset high/low latch to high
-    LDA #$3F
-    STA $2006   ; Write high byte of $3F00 address
-    LDA #$00
-    STA $2006   ; Write low byte of $3F00 address
-
-    ; Turn off PPU until the background is ready
-    LDA #$00
-    STA $2001
-
-    ; 0 = BG not ready
-    LDA #$00
-    STA bg_ready
-
-    ; --------
-    ; Load up the background
-    LDY #$20
-    LDX #$00    ; Start at address $2000
-tLoadBGTopLoop:
-    LDA $2002   ; read PPU status to reset high/low latch
-    TYA         ; Load Y into high byte
-    STA $2006   ; write high byte of $YY00 address
-    TXA         ; Load X into low byte
-    STA $2006   ; write low byte of $YY00 address
-
-tLoadBackgroundLoop:
-    LDA #$01    ; sprite $24 is a blank sprite
-    STA $2007   ; write to PPU
-    INX
-
-    ; Check for low byte of last row's last sprite ($23BF)
-    CPX #$C0
-    BNE tCheckIncHigh
-
-    ; Check for the last row
-    CPY #$23    ; compare Y to $23, which is the high byte
-                ; of the last sprite on screen ($239F)
-    BEQ tBGLoopDone
-
-tCheckIncHigh:
-    ; Increment high byte?
-    cpx #$00
-    beq tIncHighByte
-
-    jmp tLoadBackgroundLoop
-
-; Increment high byte and goto top
-tIncHighByte
-    ;ldx #$00
-    iny
-    jmp tLoadBGTopLoop
-
-tBGLoopDone:
-    lda #$20
-    sta $2006
-    lda #$AB
-    sta $2006
-
-    ldx #$60
-    txa
-titleDraw:
-    sta $2007
-    inx
-    txa
-    cmp #$6B
-    bne titleDraw
-
-    lda #$20
-    sta $2006
-    lda #$CB
-    sta $2006
-
-    ldx #$70
-    txa
-titleDraw2:
-    sta $2007
-    inx
-    txa
-    cmp #$7B
-    bne titleDraw2
-
-    ; draw box top
-    lda #$20
-    sta $2006
-    lda #$8A
-    sta $2006
-
-    lda #$06    ; upper left corner
-    sta $2007
-
-    ; loop for line
-    lda #$02
-    ldx #$0B
-titleBoxTop:
-    sta $2007
-    dex
-    bne titleBoxTop
-
-    lda #$07    ; upper right corner
-    sta $2007
-
-    ; draw box bottom
-    lda #$20
-    sta $2006
-    lda #$EA
-    sta $2006
-
-    lda #$08
-    sta $2007
-
-    lda #$03
-    ldx #$0B
-titleBoxBottom:
-    sta $2007
-    dex
-    bne titleBoxBottom
-
-    lda #$09
-    sta $2007
-
-    ; Write "VS COMP" and "2 Player"
-    lda #$22
-    sta $2006
-    lda #$0E
-    sta $2006
-
-    lda #'V'
-    sta $2007
-
-    lda #'S'
-    sta $2007
-
-    lda #' '
-    sta $2007
-
-    lda #'C'
-    sta $2007
-
-    lda #'O'
-    sta $2007
-
-    lda #'M'
-    sta $2007
-
-    lda #'P'
-    sta $2007
-
-    lda #$22
-    sta $2006
-    lda #$4E
-    sta $2006
-
-    lda #'2'
-    sta $2007
-
-    lda #' '
-    sta $2007
-
-    lda #'P'
-    sta $2007
-
-    lda #'L'
-    sta $2007
-
-    lda #'A'
-    sta $2007
-
-    lda #'Y'
-    sta $2007
-
-    lda #'E'
-    sta $2007
-
-    lda #'R'
-    sta $2007
-
-    ;lda #$23
-    ;sta $2006
-    ;lda #$C0
-    ;sta $2006
-
-    ldx #0
-titleLoadAttrLoop:
-    ;lda AttributeData, x
-    lda #$55
-    ;sta $2007
-    sta CurrentAttributes, x
-    inx
-    cpx #64
-    bne titleLoadAttrLoop
-
-; Load sprites
-    ldx #$00
-titleSpriteLoop:
-    lda titleSpriteData, X
-    sta $0200, x
-    inx
-    cpx #$04         ; one sprite, four bytes per sprite
-    bne titleSpriteLoop
-
-    ; Turn PPU back on
-    lda #%00011110
-    sta $2001
-
-    lda #1
-    sta bg_ready
-    rts
-
-; -------------------------
-; Load Gameplay gamestate
-; -------------------------
-gsGame:
-    ; General INIT stuff
-    lda #$00
-    sta p1Score
-    sta p2Score
-    jsr ResetBall
-
-    lda #ST_3
-    sta start_count
-
-    ; Turn off PPU until the background is ready
-    lda #$00
-    sta $2001
-
-    ; 0 = BG not ready
-    lda #$00
-    sta bg_ready
-
-    ; --------
-    ; Load up the background
-    ldy #$20
-    ldx #$00    ; Start at address $2000
-LoadBGTopLoop:
-    lda $2002   ; read PPU status to reset high/low latch
-    tya         ; Load Y into high byte
-    sta $2006   ; write high byte of $YY00 address
-    txa         ; Load X into low byte
-    sta $2006   ; write low byte of $YY00 address
-
-LoadBackgroundLoop:
-    lda #$00    ; sprite $24 is a blank sprite
-    sta $2007   ; write to PPU
-    inx
-
-    ; Check for low byte of last row's last sprite ($23BF)
-    cpx #$C0
-    bne CheckIncHigh
-
-    ; Check for the last row
-    cpy #$23    ; compare Y to $23, which is the high byte of the last sprite on screen ($239F)
-    beq BGLoopDone
-
-CheckIncHigh:
-    ; Increment high byte?
-    cpx #$00
-    beq IncHighByte
-
-    jmp LoadBackgroundLoop
-
-; Increment high byte and goto top
-IncHighByte
-    ;ldx #$00
-    iny
-    jmp LoadBGTopLoop
-
-BGLoopDone:
-    ;rts
-
-; Load Attributes
-;LoadAttribute:
-    ;lda $2002   ; read PPU status to reset high/low latch
-    ;lda #$23
-    ;sta $2006   ; write high byte of $23C0 address
-    ;lda #$C0
-    ;sta $2006   ; write low byte of $23C0 address
-
-    ldx #$00
-LoadAttrLoop:
-    lda AttributeData, x
-    ;lda #$00
-    ;sta $2007
-    sta CurrentAttributes, x
-    inx
-    cpx #64
-    bne LoadAttrLoop
-
-; Load sprites
-    ldx #$00
-SpriteLoop:
-    lda SpriteData, X
-    sta $0200, x
-    inx
-    cpx #36         ; one sprite, four bytes per sprite
-    bne SpriteLoop
-
-    ; Turn PPU back on
-    lda #%00011110
-    sta $2001
-
-    lda #$01
-    sta bg_ready
-    rts
-
-; -------------------------
-; Load Game Over gamestate
-; -------------------------
-gsDed:
-    ; 1 - write "GAME OVER" text
-    ; 2 - deterimine winner
-    ; 3 - write winner to screen
-    ; 4 - (not here) wait for start button -> title
-    rts
-
-ClearSprites:
-    ldx #$00
-ClearSpriteLoop:
-    lda #$00
-    sta $0200, x
-    inx
-    cpx #$00         ; one sprite, four bytes per sprite
-    bne ClearSpriteLoop
-    rts
-
 ; Was a button pressed this frame?
 ButtonPressedP1:
-    ;lda #0
-    ;sta btnPressedReturn
-
-    ; read for start
     lda controller1
     and btnPressedMask
     sta controllerTmp
@@ -1504,18 +589,14 @@ btnPress_stb:
 
 btnPress_stc:
     ; button pressed
-    lda #1 ; HERE
+    lda #1
     rts
-    ;bne btnPressTrue
 
-;btnPressFalse
-    ;lda #0
-    ;rts
-
-;btnPressTrue:
-;    lda #1
-;    ;sta btnPressedReturn
-;    rts
+    .include "ball.asm"
+    .include "countdown.asm"
+    ;.include "countdown_lookup.asm"
+    .include "input.asm"
+    .include "states.asm"
 
 ; --------
     .bank 1
@@ -1533,27 +614,27 @@ GameState_Table:
     .word gsGame-1
     .word gsTitle-1
 
-;CountdownData_Table:
-;    .word CountdownData-1
-;    .word CountdownData_start-1
-;    .word CountdownData_01-1
-;    .word CountdownData_02-1
-;    .word CountdownData_03-1
+CountdownData_Table:
+    .word CountdownData
+    .word CountdownData_start
+    .word CountdownData_01
+    .word CountdownData_02
+    .word CountdownData_03
 
 CountdownData:
-    .db $05, $20, $AE, $80, $00
+    .db $05, $20, $AE, $80, $00, $00
 
 CountdownData_start:
-    .db $05, $20, $AE, $00, 'S', 'T', 'A', 'R', 'T'
+    .db $06, $20, $AE, $00, 'S', 'T', 'A', 'R', 'T', '!', $00
 
 CountdownData_01:
-    .db $02, $20, $AE, $00, '0', '1'
+    .db $02, $20, $AE, $00, '0', '1', $00
 
 CountdownData_02:
-    .db $02, $20, $AE, $00, '0', '2'
+    .db $02, $20, $AE, $00, '0', '2', $00
 
 CountdownData_03:
-    .db $02, $20, $AE, $00, '0', '3'
+    .db $02, $20, $AE, $00, '0', '3', $00
 
 PaletteData:
     .db $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
