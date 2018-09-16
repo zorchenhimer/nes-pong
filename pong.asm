@@ -5,9 +5,10 @@
 
 ; TODO:
 ;   Game states (title, game, game over)
-;       draw game over
+;       draw game over on second nametable
 ;           reset to title on start pushed
 ;   improve collision detection
+;   Draw pause on-demand instead of on 2nd nametable
 
     .include "ram.asm"
 
