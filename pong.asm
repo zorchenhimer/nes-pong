@@ -217,28 +217,26 @@ NMI_END:
     sta PauseOn
     sta PauseOff
 
+
+    bit $2002
+    lda #0
+    sta $2005
+    sta $2005
+
     lda GamePaused
     beq nmi_GameScroll
 
-    bit $2002
-    lda #$FF
-    sta $2005
-    lda #0
-    sta $2005
-
+    ; bit 0 here adds 256 to X scroll
+    lda #%10010001
+    sta $2000
     jmp nmi_ScrollDone
 
 nmi_GameScroll
-    ; Reset scroll
-    bit $2002
-    lda #$00
-    sta $2005
-    sta $2005
+    lda #%10010000
+    sta $2000
 
 nmi_ScrollDone:
     ; bits 0 and 1 are scroll high bits, kinda
-    lda #%10010000
-    sta $2000   ; enable NMI, sprites from pattern table 0
     lda #0
     sta sleeping
 
