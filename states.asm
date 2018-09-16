@@ -31,196 +31,19 @@ UpdateGameState:
 ; Load Title gamestate
 ; -------------------------
 gsTitle:
-    LDA $2002   ; read PPU status to reset high/low latch to high
-    LDA #$3F
-    STA $2006   ; Write high byte of $3F00 address
-    LDA #$00
-    STA $2006   ; Write low byte of $3F00 address
 
-    ; Turn off PPU until the background is ready
-    LDA #$00
-    STA $2001
+    ;lda #0
+    ;sta $2000
 
-    ; 0 = BG not ready
-    LDA #$00
-    STA bg_ready
+    lda BGData_Lookup
+    sta bgPointer
 
-    ; --------
-    ; Load up the background
-    LDY #$20
-    LDX #$00    ; Start at address $2000
-tLoadBGTopLoop:
-    LDA $2002   ; read PPU status to reset high/low latch
-    TYA         ; Load Y into high byte
-    STA $2006   ; write high byte of $YY00 address
-    TXA         ; Load X into low byte
-    STA $2006   ; write low byte of $YY00 address
+    lda BGData_Lookup+1
+    sta bgPointer+1
 
-tLoadBackgroundLoop:
-    LDA #$01    ; sprite $24 is a blank sprite
-    STA $2007   ; write to PPU
-    INX
-
-    ; Check for low byte of last row's last sprite ($23BF)
-    CPX #$C0
-    BNE tCheckIncHigh
-
-    ; Check for the last row
-    CPY #$23    ; compare Y to $23, which is the high byte
-                ; of the last sprite on screen ($239F)
-    BEQ tBGLoopDone
-
-tCheckIncHigh:
-    ; Increment high byte?
-    cpx #$00
-    beq tIncHighByte
-
-    jmp tLoadBackgroundLoop
-
-; Increment high byte and goto top
-tIncHighByte
-    ;ldx #$00
-    iny
-    jmp tLoadBGTopLoop
-
-tBGLoopDone:
-    lda #$20
-    sta $2006
-    lda #$AB
-    sta $2006
-
-    ldx #$60
-    txa
-titleDraw:
-    sta $2007
-    inx
-    txa
-    cmp #$6B
-    bne titleDraw
-
-    lda #$20
-    sta $2006
-    lda #$CB
-    sta $2006
-
-    ldx #$70
-    txa
-titleDraw2:
-    sta $2007
-    inx
-    txa
-    cmp #$7B
-    bne titleDraw2
-
-    ; draw box top
-    lda #$20
-    sta $2006
-    lda #$8A
-    sta $2006
-
-    lda #$06    ; upper left corner
-    sta $2007
-
-    ; loop for line
-    lda #$02
-    ldx #$0B
-titleBoxTop:
-    sta $2007
-    dex
-    bne titleBoxTop
-
-    lda #$07    ; upper right corner
-    sta $2007
-
-    ; draw box bottom
-    lda #$20
-    sta $2006
-    lda #$EA
-    sta $2006
-
-    lda #$08
-    sta $2007
-
-    lda #$03
-    ldx #$0B
-titleBoxBottom:
-    sta $2007
-    dex
-    bne titleBoxBottom
-
-    lda #$09
-    sta $2007
-
-    ; Write "VS COMP" and "2 Player"
-    lda #$22
-    sta $2006
-    lda #$0E
-    sta $2006
-
-    lda #'V'
-    sta $2007
-
-    lda #'S'
-    sta $2007
-
-    lda #' '
-    sta $2007
-
-    lda #'C'
-    sta $2007
-
-    lda #'O'
-    sta $2007
-
-    lda #'M'
-    sta $2007
-
-    lda #'P'
-    sta $2007
-
-    lda #$22
-    sta $2006
-    lda #$4E
-    sta $2006
-
-    lda #'2'
-    sta $2007
-
-    lda #' '
-    sta $2007
-
-    lda #'P'
-    sta $2007
-
-    lda #'L'
-    sta $2007
-
-    lda #'A'
-    sta $2007
-
-    lda #'Y'
-    sta $2007
-
-    lda #'E'
-    sta $2007
-
-    lda #'R'
-    sta $2007
-
-    ;lda #$23
-    ;sta $2006
-    ;lda #$C0
-    ;sta $2006
-
-    ldx #0
-titleLoadAttrLoop:
-    ;lda AttributeData, x
-    lda #$55
-    ;sta $2007
-    sta CurrentAttributes, x
-    inx
-    cpx #64
-    bne titleLoadAttrLoop
+    lda #$FF
+    sta bgUpdateFlags
+    jsr UpdateBackground
 
 ; Load sprites
     ldx #$00
@@ -231,17 +54,15 @@ titleSpriteLoop:
     cpx #$04         ; one sprite, four bytes per sprite
     bne titleSpriteLoop
 
-    bit $2002
-    lda #$00
-    sta $2005
-    sta $2005
-
     ; Turn PPU back on
-    lda #%00011110
+    lda #PPU_ON
     sta $2001
 
-    lda #1
-    sta bg_ready
+    ;lda FrameUpdates
+    ;ora #%11000000
+    ;sta FrameUpdates
+    ;lda #%10010000
+    ;sta $2000   ; enable NMI, sprites from pattern table 0
     rts
 
 ; -------------------------
@@ -252,80 +73,19 @@ gsGame:
     lda #$00
     sta p1Score
     sta p2Score
+    ;sta $2000
+
     jsr ResetBall
 
-    lda #ST_3
-    sta start_count
+    lda BGData_Lookup+2
+    sta bgPointer
 
-    ; Turn off PPU until the background is ready
-    lda #$00
-    sta $2001
+    lda BGData_Lookup+3
+    sta bgPointer+1
 
-    ; 0 = BG not ready
-    lda #$00
-    sta bg_ready
-
-    ; --------
-    ; Load up the background
-    ldy #$20
-    ldx #$00    ; Start at address $2000
-LoadBGTopLoop:
-    lda $2002   ; read PPU status to reset high/low latch
-    tya         ; Load Y into high byte
-    sta $2006   ; write high byte of $YY00 address
-    txa         ; Load X into low byte
-    sta $2006   ; write low byte of $YY00 address
-
-LoadBackgroundLoop:
-    lda #$00    ; sprite $24 is a blank sprite
-    sta $2007   ; write to PPU
-    inx
-
-    ; Check for low byte of last row's last sprite ($23BF)
-    cpx #$C0
-    bne CheckIncHigh
-
-    ; Check for the last row
-    cpy #$23    ; compare Y to $23, which is the high byte of the last sprite on screen ($239F)
-    beq BGLoopDone
-
-CheckIncHigh:
-    ; Increment high byte?
-    cpx #$00
-    beq IncHighByte
-
-    jmp LoadBackgroundLoop
-
-; Increment high byte and goto top
-IncHighByte
-    ;ldx #$00
-    iny
-    jmp LoadBGTopLoop
-
-BGLoopDone:
-    ;rts
-
-; Load Attributes
-;LoadAttribute:
-    ;lda $2002   ; read PPU status to reset high/low latch
-    ;lda #$23
-    ;sta $2006   ; write high byte of $23C0 address
-    ;lda #$C0
-    ;sta $2006   ; write low byte of $23C0 address
-
-    ldx #$00
-LoadAttrLoop:
-    lda AttributeData, x
-    ;lda #$00
-    ;sta $2007
-    sta CurrentAttributes, x
-    inx
-    cpx #64
-    bne LoadAttrLoop
-
-    lda dirty_flags
-    ora #D_ATTRIBUTE
-    sta dirty_flags
+    lda #$FF
+    sta bgUpdateFlags
+    jsr UpdateBackground
 
 ; Load sprites
     ldx #$00
@@ -337,11 +97,13 @@ SpriteLoop:
     bne SpriteLoop
 
     ; Turn PPU back on
-    lda #%00011110
+    lda #PPU_ON
     sta $2001
 
     lda #$01
-    sta bg_ready
+    sta start_ticks
+    ;lda #%10010000
+    ;sta $2000   ; enable NMI, sprites from pattern table 0
     rts
 
 ; -------------------------
@@ -363,3 +125,130 @@ ClearSpriteLoop:
     cpx #$00         ; one sprite, four bytes per sprite
     bne ClearSpriteLoop
     rts
+
+BGData_Lookup:
+    .word TitleBGData
+    .word GameBGData
+
+GameState_Table:
+    .word gsDed-1
+    .word gsGame-1
+    .word gsTitle-1
+
+TitleBGData:
+    ; Flag byte
+    ;   %1000 0000  RLE
+    ;   %0100 0000  Skip PPU Address
+
+    ; blank background to start of box
+    .db $AA, $80, $20, $00, $01
+
+    ; box top
+    .db $01, $40, $06   ; left corner
+    .db $0B, $C0, $02   ; top line
+    .db $01, $40, $07   ; right corner
+    .db $14, $C0, $01   ; blank until start of logo
+
+    ; logo top row
+    .db $0B, $40, $60, $61, $62, $63, $64
+    .db $65, $66, $67, $68, $69, $6A
+
+    .db $15, $C0, $01   ; black until 2nd row of logo
+
+    ; logo bottom row
+    .db $0B, $40, $70, $71, $72, $73, $74
+    .db $75, $76, $77, $78, $79, $7A
+
+    .db $14, $C0, $01   ; blank until start of bottom box
+    .db $01, $40, $08   ; left corner
+    .db $0B, $C0, $03   ; bottom line
+    .db $01, $40, $09   ; right corner
+
+    ; blank until menu start
+    .db $F6, $C0, $01
+    ;.db $17, $C0, $01
+
+    .db $07, $40, 'V', 'S', ' ', 'C', 'O', 'M', 'P'
+    .db $39, $C0, $01
+    .db $08, $40, '2', ' ', 'P', 'L', 'A', 'Y', 'E', 'R'
+    .db $FF, $C0, $01
+    .db $6C, $C0, $01
+
+    ; attribute data
+    .db $40, $C0, $55
+    .db $00
+
+titleSpriteData:
+    .db $7F, $05, $00, $5E
+
+GameBGData:
+    .db $64, $80, $20, $00, $00
+    .db $02, $C0, '0'   ; should be at $2064
+    .db $14, $C0, $00
+    .db $02, $C0, '0'   ; should be at $207A
+    .db $FF, $C0, $00
+    .db $FF, $C0, $00
+    .db $FF, $C0, $00
+    .db $47, $C0, $00
+
+    ; attribute data
+    .db $08, $C0, $0F
+    .db $30, $C0, $00
+    .db $08, $C0, $0F
+
+    ; 2nd nametable 
+    .db $02, $00, $24, $64, '0', '0'   ; should be at $2064
+    .db $02, $00, $24, $7A, '0', '0'   ; should be at $2064
+
+    .db $01, $00, $25, $8C, $06     ; left corner
+    .db $06, $C0, $02       ; top line
+    .db $01, $40, $07       ; right corner
+
+    .db $01, $00, $25, $AC, $04
+    .db $06, $40, 'P', 'A', 'U', 'S', 'E', 'D'
+    ;.db $06, $C0, $01       ; box bg
+    .db $01, $40, $05
+
+    .db $01, $00, $25, $CC, $04
+    .db $06, $C0, $01       ; box bg
+    .db $01, $40, $05
+
+    .db $01, $00, $25, $EC, $08     ; left corner
+    .db $06, $C0, $03       ; bottom line
+    .db $01, $40, $09       ; right corner
+
+    ; attribute data
+    .db $08, $80, $27, $C0, $0F
+    .db $02, $80, $27, $DB, $55
+    .db $08, $80, $27, $F8, $0F
+    .db $00
+
+    ; attribute data
+    ;.db $08, $C0, $0F
+    ;.db $30, $C0, $00
+    ;.db $08, $C0, $0F
+    ;.db $00
+
+SpriteData:
+    ; Sprite Attribute Stuff
+    ; %1000 0000    Flip horizontally
+    ; %0100 0000    Flip vertically
+    ; %0010 0000    Priority (0 front of BG; 1 behind BG)
+    ; %0000 1100    Ignored
+    ; %0000 0011    Palette
+
+    ;   Y,   Idx, Attr, X
+    .db $80, $01, %00000000, $80    ; Ball
+
+    ; Player 1
+    .db $80, $02, %00000000, $08    ; Paddle top
+    .db $88, $04, %00000000, $08    ; Paddle middle A
+    .db $8F, $04, %00000000, $08    ; Paddle middle A
+    .db $94, $03, %00000000, $08    ; Paddle bottom
+
+    ; Player 2
+    .db $80, $02, %00000000, $F0    ; Paddle top
+    .db $88, $04, %00000000, $F0    ; Paddle middle A
+    .db $8F, $04, %00000000, $F0    ; Paddle middle A
+    .db $94, $03, %00000000, $F0    ; Paddle bottom
+

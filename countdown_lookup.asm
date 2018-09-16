@@ -1,71 +1,57 @@
+; Writes to ram
 DoCountdown:
+    dec start_ticks
+    bne cdNoChange
+
     lda start_count
     asl a
     tax
     lda CountdownData_Table, x
-    sta CountdownDataAddress
+    sta bgPointer
 
     lda CountdownData_Table+1, x
-    sta CountdownDataAddress+1
+    sta bgPointer+1
 
-    ; low byte first
     lda #$00
-    sta dcQueuePointer
+    sta bgUpdateFlags
 
-    lda #$03
-    sta dcQueuePointer+1
+    jsr LoadBackgroundData
 
-    ldy #0
-dcOuterLoop:
-    ; length of packet
-    lda [CountdownDataAddress], Y
-    sta dcPacketLength
-    sta [dcQueuePointer], Y
+    lda FrameUpdates
+    ora #%01000000
+    sta FrameUpdates
 
-    bne dcContinue
+    lda start_count
+    beq cdNoChange
+
+    lda #ST_LENGTH
+    sta start_ticks
+    dec start_count
+
+cdNoChange:
     rts
 
-dcContinue:
-    ; Next two are PPU address
-    iny
-    lda [CountdownDataAddress], Y
-    sta [dcQueuePointer], Y
+; Data
+CountdownData_Table:
+    .word $FFFF
+    .word CountdownData
+    .word CountdownData_start
+    .word CountdownData_01
+    .word CountdownData_02
+    .word CountdownData_03
 
-    iny
-    lda [CountdownDataAddress], Y
-    sta [dcQueuePointer], Y
+CountdownData:
+    .db $06, $80, $20, $AE, $00, $00
 
-    ; flags
-    iny
-    lda [CountdownDataAddress], Y
-    sta [dcQueuePointer], Y
-    sta dcFlags
-    bit dcFlags
-    bmi dcRunlength
+CountdownData_start:
+    .db $06, $00, $20, $AE, 'S', 'T', 'A', 'R', 'T', '!', $00
 
-dcDataLoop:
-    iny
-    lda [CountdownDataAddress], Y
-    sta [dcQueuePointer], Y
-    dec dcPacketLength
-    bne dcDataLoop
-    jmp dcOuterLoop
+CountdownData_01:
+    .db $02, $00, $20, $AE, '0', '1', $00
 
-dcRunlength:
-    iny
-    lda [CountdownDataAddress], Y
-    sta [dcQueuePointer], Y
+CountdownData_02:
+    .db $02, $00, $20, $AE, '0', '2', $00
 
-    ; update queue pointer
-    tya ; queue pointer
-    clc
-    adc #5  ; packet header
-    adc dcQueuePointer
-    sta dcQueuePointer
-
-    ; add carry to high bytes
-    lda dcQueuePointer+1
-    adc #0  ; add the carry, if it exists
-    sta dcQueuePointer+1
-    jmp dcOuterLoop
+CountdownData_03:
+    .db $02, $00, $20, $AE, '0', '3', $00
 

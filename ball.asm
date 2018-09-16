@@ -10,175 +10,185 @@ UpdateBall:
 
 ; Countdown is active, don't move ball
 DoCountdown_jmp:
+    cmp #ST_0
+    bcs ub_doCountdown
+    jsr DoCountdown
+    jmp updateBall_ok
+
+ub_doCountdown:
     jmp DoCountdown
 
 ; "Start" is displayed, but ball is moving.
-update_ball_start_check:
-    LDA start_count
-    CMP #ST_1
-    BCS jmp_BallUpdateDone
-    jmp updateBall_ok
-
-jmp_BallUpdateDone:
-    jmp BallUpdateDone
+;update_ball_start_check:
+;    LDA start_count
+;    CMP #ST_1
+;    BCS jmp_BallUpdateDone
+;    jmp updateBall_ok
+;
+;jmp_BallUpdateDone:
+;    jmp BallUpdateDone
 
 ; Normal ball movement
 updateBall_ok:
-    LDA BallUp
-    BEQ MoveBallDown
+    lda BallUp
+    beq MoveBallDown
 
     ; Move Up
-    LDA BallY
-    SEC
-    SBC BallSpeedY
-    STA BallY
+    lda BallY
+    sec
+    sbc BallSpeedY
+    sta BallY
 
     ; Check bounce
-    CMP #WALL_TOP
-    BCS UpdateBallHoriz
+    cmp #WALL_TOP
+    bcs UpdateBallHoriz
 
-    LDA #0
-    STA BallUp
+    lda #0
+    sta BallUp
 
-    JMP UpdateBallHoriz
+    jmp UpdateBallHoriz
 
 MoveBallDown:
     ; Move Down
-    LDA BallY
-    CLC
-    ADC BallSpeedY
-    STA BallY
+    lda BallY
+    clc
+    adc BallSpeedY
+    sta BallY
 
-    CMP #WALL_BOTTOM
-    BCC UpdateBallHoriz
+    cmp #WALL_BOTTOM
+    bcc UpdateBallHoriz
 
-    LDA #1
-    STA BallUp
+    lda #1
+    sta BallUp
 
 UpdateBallHoriz:
-    LDA BallLeft
-    BEQ MoveBallRight
+    lda BallLeft
+    beq MoveBallRight
 
     ; Move Left
-    LDA BallX
-    SEC
-    SBC BallSpeedX
-    STA BallX
+    lda BallX
+    sec
+    sbc BallSpeedX
+    sta BallX
 
     ;if BallY < P1_TOP - ball above paddle
-    LDA BallY
-    CLC
-    ADC #8
-    CMP P1_TOP
-    BCC BallCheckLeftWall   ; no paddle
+    lda BallY
+    clc
+    adc #8
+    cmp P1_TOP
+    bcc BallCheckLeftWall   ; no paddle
 
     ; if BallY > (P1_Bottom + 8) - ball lower than paddle
-    SEC
-    SBC #16
-    CMP P1_BOTTOM
-    BNE ballycheck1
-    JMP BallCheckLeftWall
+    sec
+    sbc #16
+    cmp P1_BOTTOM
+    bne ballycheck1
+    jmp BallCheckLeftWall
 ballycheck1:
-    BCS BallCheckLeftWall
+    bcs BallCheckLeftWall
     ; ball is in vertical box
 
-    LDA P1_LEFT
-    CLC
-    ADC #8
-    CMP BallX
-    BNE ballxcheck3
-    JMP BallCheckLeftWall
+    lda P1_LEFT
+    clc
+    adc #8
+    cmp BallX
+    bne ballxcheck3
+    jmp BallCheckLeftWall
 ballxcheck3:
-    BCS ballxcheck4
-    JMP BallCheckLeftWall
+    bcs ballxcheck4
+    jmp BallCheckLeftWall
 ballxcheck4:
     ; ball is in paddle
-    LDA #0
-    STA BallLeft
-    JMP BallUpdateDone
+    lda #0
+    sta BallLeft
+    jmp BallUpdateDone
 
 BallCheckLeftWall:
-    LDA BallX
-    CMP #WALL_LEFT
-    BCS BallUpdateDone
+    lda BallX
+    cmp #WALL_LEFT
+    bcs BallUpdateDone
 
-    INC p2Score
-    JSR ResetBall
-    LDA #0
-    STA BallLeft
+    inc p2Score
+    jsr ResetBall
+    lda #0
+    sta BallLeft
 
-    JMP BallUpdateDone
+    jmp UpdateScores
+
+    jmp BallUpdateDone
 
 MoveBallRight:
     ; Move right
-    LDA BallX
-    CLC
-    ADC BallSpeedX
-    STA BallX
+    lda BallX
+    clc
+    adc BallSpeedX
+    sta BallX
 
     ; if bally < P2_Top - ball is above paddle
-    LDA BallY
-    CLC
-    ADC #8
-    CMP P2_TOP
-    BCC BallCheckRightWall ; no paddle
+    lda BallY
+    clc
+    adc #8
+    cmp P2_TOP
+    bcc BallCheckRightWall ; no paddle
 
     ; if BallY > (P2_Bottom + 8) - ball lower than paddle
-    SEC
-    SBC #16
-    CMP P2_BOTTOM
-    BNE ballycheck2
-    JMP BallCheckRightWall
+    sec
+    sbc #16
+    cmp P2_BOTTOM
+    bne ballycheck2
+    jmp BallCheckRightWall
 ballycheck2:
-    BCS BallCheckRightWall
+    bcs BallCheckRightWall
 
     ; ball is in vertical box
-    LDA P2_LEFT
-    SEC
-    SBC #8
-    CMP BallX
-    BCC ballp2bounce    ; Bounce off paddle if less ballx < (P2_left - 8)
-    JMP BallCheckRightWall
+    lda P2_LEFT
+    sec
+    sbc #8
+    cmp BallX
+    bcc ballp2bounce    ; Bounce off paddle if less ballx < (P2_left - 8)
+    jmp BallCheckRightWall
 
     ; ball is in paddle
 ballp2bounce:
-    LDA #1
-    STA BallLeft
-    JMP BallUpdateDone
+    lda #1
+    sta BallLeft
+    jmp BallUpdateDone
 
 BallCheckRightWall:
-    LDA BallX
-    CMP #WALL_RIGHT
-    BCC BallUpdateDone
+    lda BallX
+    cmp #WALL_RIGHT
+    bcc BallUpdateDone
 
-    INC p1Score
-    JSR ResetBall
-    LDA #1
-    STA BallLeft
+    inc p1Score
+    jsr ResetBall
+    lda #1
+    sta BallLeft
+
+    jmp UpdateScores
 
 BallUpdateDone:
-    RTS
+    rts
 
 ; ---------------------------
 ; Put the ball back in the
 ; center of the playfield
 ; ---------------------------
 ResetBall:
-    LDA #$00
+    lda #$00
     ;STA BallUp
-    STA BallLeft
+    sta BallLeft
 
-    LDA #$02
-    STA BallSpeedX
-    STA BallSpeedY
+    lda #$02
+    sta BallSpeedX
+    sta BallSpeedY
 
-    LDA #$78
-    STA BallX
-    STA BallY
+    lda #$78
+    sta BallX
+    sta BallY
 
     ; Start a countdown
-    LDA #ST_3
-    STA start_count
-    LDA #ST_LENGTH
-    STA start_ticks
+    lda #ST_3
+    sta start_count
+    lda #1
+    sta start_ticks
     rts

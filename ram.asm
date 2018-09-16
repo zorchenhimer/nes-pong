@@ -1,8 +1,5 @@
 
     .rsset $0000
-bg_ready    .rs 1   ; When not ready, PPU is off
-sp_ready    .rs 1   ; Sprite ready?
-
 ; Moving up or left?
 BallUp      .rs 1
 BallLeft    .rs 1
@@ -24,12 +21,16 @@ controllerTmp   .rs 1
 compController  .rs 1
 frameOdd        .rs 1
 
+PauseOn     .rs 1
+PauseOff    .rs 1
+
 ; countdown timer for ball
 start_count .rs 1
-ST_3        = 4
-ST_2        = 3
-ST_1        = 2
-ST_0        = 1
+ST_3        = 5
+ST_2        = 4
+ST_1        = 3
+ST_0        = 2
+ST_CLEAR    = 1
 ST_RUNNING  = 0
 ST_LENGTH   = 45;$1E
 
@@ -51,15 +52,35 @@ GamePaused      .rs 1
 btnPressedMask      .rs 1   ; the button to check
 ;btnPressedReturn    .rs 1   ; return value
 
-dcPacketLength  .rs 1
-dcQueuePointer  .rs 2
-dcFlags         .rs 1
-CountdownDataAddress .rs 2
 
-dirty_flags     .rs 1
-D_ATTRIBUTE     = 1 << 0
-D_PALETTE       = 1 << 1
-D_BACKGROUND    = 1 << 2
+;dcPacketLength  .rs 1
+;dcQueuePointer  .rs 2
+;dcFlags         .rs 1
+;CountdownDataAddress .rs 2
+
+bgUpdateFlags   .rs 1
+bgLength        .rs 1
+bgFlags         .rs 1
+bgPointer       .rs 2
+bgQueue         .rs 2
+bgSkipQueueReset    .rs 1
+;bgDataAddress   .rs 2
+
+; use this one, i think?
+D_ATTRIBUTE     = %10000000
+D_BACKGROUND    = %01000000
+FrameUpdates    .rs 1
+
+score_tens      .rs 1
+score_ones      .rs 1
+
+    .rsset $0200
+SpriteRAM      .rs 256
+PaletteRAM      .rs 32
+AttributeRAM    .rs 64
+
+    .rsset $0400
+bgBuffer        .rs 256
 
 ; ---------------------------
 ; Constants
@@ -94,10 +115,7 @@ BallY       = $0200
 TitleCursor = $0200
 
 ; Background tile update queue
-BG_QUEUE    = $0300
-
-CurrentPalette      = $0500
-CurrentAttributes   = $0520
+;BG_QUEUE    = $0300
 
 ; Button Constants
 BUTTON_A        = 1 << 7
@@ -108,3 +126,6 @@ BUTTON_UP       = 1 << 3
 BUTTON_DOWN     = 1 << 2
 BUTTON_LEFT     = 1 << 1
 BUTTON_RIGHT    = 1 << 0
+
+PPU_ON          = %00011110
+PPU_OFF         = %00000110
