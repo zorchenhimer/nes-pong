@@ -90,15 +90,13 @@ ubNextPacket:
 
 ; Load data into RAM
 LoadBackgroundData:
-    ; reset queue address
-    ;lda bgQueue
-    ;beq lbLoop
-    ;dec bgQueue
+    ; queue address is not reset here
+    lda bgWrites
+    beq lbLoop
 
-    lda #$00
-    sta bgQueue
-    lda #$04
-    sta bgQueue+1
+    ; If something was loaded into the queue previously,
+    ; remove it's terminator byte
+    dec bgQueue
 
 lbLoop:
     ; bgPointer needs to be set before calling this
@@ -110,12 +108,8 @@ lbLoop:
     sta [bgQueue], y
     bne lb_ok
 
-    ; reset queue pointer
-    ;lda #$00
-    ;sta bgQueue
-    ;lda #$04
-    ;sta bgQueue+1
-    ; return
+    ; Set the bgWrites flag
+    inc bgWrites
     rts
 
 lb_ok:

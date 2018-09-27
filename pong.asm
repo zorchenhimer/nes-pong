@@ -4,11 +4,8 @@
     .inesmir 1      ; background mirroring (ignore for now)
 
 ; TODO:
-;   Game states (title, game, game over)
-;       draw game over on second nametable
-;           reset to title on start pushed
 ;   improve collision detection
-;   Draw pause on-demand instead of on 2nd nametable
+;       figure out the math for this
 
     .include "ram.asm"
 
@@ -59,6 +56,8 @@ vblankwait2:    ; Second wait for vblank.  PPU is ready after this
     lda #%10010000
     sta $2000   ; enable NMI, sprites from pattern table 0
 
+    jsr Sound_Init
+
 ; Load the palettes
     ldx #$00
 LoadPaletteLoop:
@@ -74,6 +73,7 @@ LoadPaletteLoop:
     jsr UpdateGameState
 
     .include "frame_loop.asm"
+    .include "sound_engine.asm"
 
 CheckPause:
     lda #BUTTON_START
@@ -100,6 +100,17 @@ uUnPauseLoop:
     inx
     cpx #32
     bne uUnPauseLoop
+
+    lda PauseTable+2
+    sta bgPointer
+
+    lda PauseTable+3
+    sta bgPointer+1
+
+    jsr LoadBackgroundData
+
+    lda #$FF
+    sta FrameUpdates
     rts
 
 uSetPause:
@@ -116,6 +127,17 @@ uSetPauseLoop:
     inx
     cpx #32
     bne uSetPauseLoop
+
+    lda PauseTable
+    sta bgPointer
+
+    lda PauseTable+1
+    sta bgPointer+1
+
+    jsr LoadBackgroundData
+
+    lda #$FF
+    sta FrameUpdates
     rts
 
 ; ---------------------------
@@ -132,6 +154,14 @@ UpdateTitle:
 
 ; start pressed this frame
 utitle_stc:
+    lda TitleSelected
+    cmp #$02
+    bne titleStartGame
+    ; do sound stuff
+    jmp Sound_Load
+    rts
+
+titleStartGame:
     lda #GS_GAME
     sta GameState
     lda #1
@@ -150,24 +180,38 @@ titleSelect:
 
 ; button was pressed
 utitle_c:
+    inc TitleSelected
     lda TitleSelected
-    beq utitle_sel_2p
+    cmp #$03
+    bne utitleSprite
 
-    ; vs comp
-    lda #$00
+    lda #0
     sta TitleSelected
-    lda #$7F
+
+utitleSprite:
+    tay
+    lda TitleSpritePositions, y
     sta TitleCursor
+;    beq utitle_sel_2p
+;
+;    ; vs comp
+;    lda #$00
+;    sta TitleSelected
+;    lda #$7F
+;    sta TitleCursor
+;    rts
+;
+;; 2 player game mode selected
+;utitle_sel_2p:
+;    ; 2 player
+;    lda #$01
+;    sta TitleSelected
+;    lda #$8F
+;    sta TitleCursor
     rts
 
-; 2 player game mode selected
-utitle_sel_2p:
-    ; 2 player
-    lda #$01
-    sta TitleSelected
-    lda #$8F
-    sta TitleCursor
-    rts
+TitleSpritePositions:
+    .db $7F, $8F, $9F
 
 ; vblank triggered
 NMI:
@@ -177,6 +221,18 @@ NMI:
     pha
     tya
     pha
+
+    ; Don't do anything here if we're still
+    ; drawing to the background in
+    ; UpdateGameState
+    lda SkipNMI
+    bne nmi_Skip
+
+    ; reset the background queue pointer
+    lda #$00
+    sta bgQueue
+    lda #$04
+    sta bgQueue+1
 
     lda GamePaused
     bne nmi_SkipSprites
@@ -206,7 +262,6 @@ uPaletteLoop:
     cpx #32    ; Each Palette is four bytes.  Eight Palettes total.  4 * 8 = 32 bytes.
     bne uPaletteLoop
 
-NMI_skipAttr:
     bit FrameUpdates
     bvc NMI_END
     jsr UpdateBackground
@@ -218,22 +273,23 @@ NMI_END:
     sta PauseOn
     sta PauseOff
 
-
     bit $2002
     lda #0
     sta $2005
     sta $2005
 
-    lda GamePaused
-    beq nmi_GameScroll
+    lda GameState
+    cmp #GS_DED
+    beq nmi_DED
 
-    ; bit 0 here adds 256 to X scroll
-    lda #%10010001
+    lda #%10010000
     sta $2000
     jmp nmi_ScrollDone
 
-nmi_GameScroll
-    lda #%10010000
+nmi_DED
+    ; bit 0 here adds 256 to X scroll
+    lda #%10010001
+    ;lda #%10010000
     sta $2000
 
 nmi_ScrollDone:
@@ -241,6 +297,8 @@ nmi_ScrollDone:
     lda #0
     sta sleeping
 
+nmi_Skip:
+    jsr Sound_PlayFrame
     ; Restore registers
     pla
     tay
@@ -301,45 +359,52 @@ PausedPalette:
     .db $0F,$14,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$01,$01,$01
     .db $0F,$00,$2D,$10, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
 
-;PauseTable:
-;    .word PausedAttributes
-;    .word UnPausedAttributes
-;
-;PausedAttributes:
-;    ; "PAUSED" box
-;    .db $01, $00, $21, $8C, $06     ; left corner
-;    .db $06, $C0, $02       ; top line
-;    .db $01, $40, $07       ; right corner
-;
-;    .db $01, $00, $21, $AC, $04
-;    .db $06, $C0, $01       ; box bg
-;    .db $01, $40, $05
-;
-;    .db $01, $00, $21, $CC, $04
-;    .db $06, $C0, $01       ; box bg
-;    .db $01, $40, $05
-;
-;    .db $01, $00, $21, $EC, $08     ; left corner
-;    .db $06, $C0, $02       ; top line
-;    .db $01, $40, $09       ; right corner
-;
-;    ; attribute data
-;    .db $02, $80, $23, $DB, $55
-;    .db $00
-;
-;UnPausedAttributes:
-;    ; clear "PAUSED" box
-;    .db $08, $80, $21, $8C, $00 ; top row
-;    .db $08, $80, $21, $AC, $00
-;    .db $08, $80, $21, $CC, $00
-;
-;    ; attribute data
-;    .db $02, $80, $23, $DB, $00
-;    .db $00
+PauseTable:
+    .word PausedAttributes
+    .word UnPausedAttributes
+
+PausedAttributes:
+    ; "PAUSED" box
+    ;.db $01, $00, $21, $8C, $06     ; left corner
+    ;.db $06, $C0, $02       ; top line
+    ;.db $01, $40, $07       ; right corner
+    .db $08, $00, $21, $8C, $06, $02, $02, $02, $02, $02, $02, $07
+
+    ;.db $01, $00, $21, $AC, $04
+    ;.db $06, $C0, $01       ; box bg
+    ;.db $01, $40, $05
+    .db $08, $00, $21, $AC, $04, 'P', 'A', 'U', 'S', 'E', 'D', $05
+
+    ;.db $01, $00, $21, $CC, $04
+    ;.db $06, $C0, $01       ; box bg
+    ;.db $01, $40, $05
+    .db $08, $00, $21, $CC, $04, $01, $01, $01, $01, $01, $01, $05
+
+    ;.db $01, $00, $21, $EC, $08     ; left corner
+    ;.db $06, $C0, $02       ; top line
+    ;.db $01, $40, $09       ; right corner
+    .db $08, $00, $21, $EC, $08, $03, $03, $03, $03, $03, $03, $09
+
+    ; attribute data
+    .db $02, $80, $23, $DB, $55
+    .db $00
+
+UnPausedAttributes:
+    ; clear "PAUSED" box
+    .db $08, $80, $21, $8C, $00 ; top row
+    .db $08, $80, $21, $AC, $00
+    .db $08, $80, $21, $CC, $00
+    .db $08, $80, $21, $EC, $00
+
+    ; attribute data
+    .db $02, $80, $23, $DB, $00
+    .db $00
     ;.db $08, $80, $0F
     ;.db $30, $C0, $00
     ;.db $08, $C0, $0F
     ;.db $00
+
+    .include "note_table.i"
 
 ; Vectors (interupts?)
     .org $FFFA  ; first of three vectors starts here

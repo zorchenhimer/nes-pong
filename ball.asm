@@ -31,7 +31,7 @@ ub_doCountdown:
 ; Normal ball movement
 updateBall_ok:
     lda BallUp
-    beq MoveBallDown
+    beq MoveBallDown    ; ballup == 0; moving down
 
     ; Move Up
     lda BallY
@@ -39,6 +39,17 @@ updateBall_ok:
     sbc BallSpeedY
     sta BallY
 
+    lda ballFaster
+    bne ubNotFasterUp
+
+    lda frameOdd
+    bne ubNotFasterUp
+
+    dec BallY
+
+ubNotFasterUp:
+
+    lda BallY
     ; Check bounce
     cmp #WALL_TOP
     bcs UpdateBallHoriz
@@ -55,6 +66,17 @@ MoveBallDown:
     adc BallSpeedY
     sta BallY
 
+    lda ballFaster
+    bne ubNotFasterDn
+
+    lda frameOdd
+    bne ubNotFasterDn
+
+    inc BallY
+
+ubNotFasterDn:
+
+    lda BallY
     cmp #WALL_BOTTOM
     bcc UpdateBallHoriz
 
@@ -62,6 +84,7 @@ MoveBallDown:
     sta BallUp
 
 UpdateBallHoriz:
+    ; Moving right or left?
     lda BallLeft
     beq MoveBallRight
 
@@ -71,16 +94,19 @@ UpdateBallHoriz:
     sbc BallSpeedX
     sta BallX
 
+; Colission below
+
     ;if BallY < P1_TOP - ball above paddle
     lda BallY
     clc
     adc #8
     cmp P1_TOP
-    bcc BallCheckLeftWall   ; no paddle
+    bcc BallCheckLeftWall   ; above paddle
 
     ; if BallY > (P1_Bottom + 8) - ball lower than paddle
+    lda BallY
     sec
-    sbc #16
+    sbc #8
     cmp P1_BOTTOM
     bne ballycheck1
     jmp BallCheckLeftWall
@@ -88,20 +114,37 @@ ballycheck1:
     bcs BallCheckLeftWall
     ; ball is in vertical box
 
+    lda BallX
+    ;clc
+    ;adc #4
+    cmp P1_LEFT
+    ; BallX < collision plane (behind paddle)
+    bcc BallCheckLeftWall
+    ;bne ballxcheck3
+    ;jmp BallCheckLeftWall
+
+;ballxcheck3:
+;    bcs ballxcheck4
+;    jmp BallCheckLeftWall
+
+ballxcheck4:
     lda P1_LEFT
     clc
-    adc #8
+    adc #8      ; right edge of paddle
     cmp BallX
-    bne ballxcheck3
-    jmp BallCheckLeftWall
-ballxcheck3:
-    bcs ballxcheck4
-    jmp BallCheckLeftWall
-ballxcheck4:
-    ; ball is in paddle
+    ;beq p1Bounce
+    bcs p1Bounce
+
+    jmp BallUpdateDone
+    ;bcc noP1Bounce
+
+p1Bounce:
+    ; ball is in collision box
     lda #0
     sta BallLeft
-    jmp BallUpdateDone
+
+;noP1Bounce:
+;    jmp BallUpdateDone
 
 BallCheckLeftWall:
     lda BallX
@@ -182,6 +225,15 @@ ResetBall:
     sta BallSpeedX
     sta BallSpeedY
 
+    lda #0
+    sta ballFaster
+
+    lda frameOdd
+    beq rbNotOdd
+    lda #1
+    sta ballFaster
+
+rbNotOdd:
     lda #$78
     sta BallX
     sta BallY

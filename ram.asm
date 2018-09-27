@@ -21,6 +21,8 @@ controllerTmp   .rs 1
 compController  .rs 1
 frameOdd        .rs 1
 
+ballFaster      .rs 1
+
 PauseOn     .rs 1
 PauseOff    .rs 1
 
@@ -64,6 +66,7 @@ bgFlags         .rs 1
 bgPointer       .rs 2
 bgQueue         .rs 2
 bgSkipQueueReset    .rs 1
+bgWrites        .rs 1
 ;bgDataAddress   .rs 2
 
 ; use this one, i think?
@@ -73,6 +76,12 @@ FrameUpdates    .rs 1
 
 score_tens      .rs 1
 score_ones      .rs 1
+
+SkipNMI         .rs 1
+sfx_playing     .rs 1
+sfx_index       .rs 1
+sfx_frame       .rs 1
+sfx_disabled    .rs 1
 
     .rsset $0200
 SpriteRAM      .rs 256
@@ -85,6 +94,8 @@ bgBuffer        .rs 256
 ; ---------------------------
 ; Constants
 ; ---------------------------
+MAX_SCORE   = 5
+
 GS_TITLE    = 2
 GS_GAME     = 1
 GS_DED      = 0
@@ -104,6 +115,8 @@ WALL_BOTTOM_PADDLE  = $C0
 P1_TOP      = $0204
 P1_LEFT     = $0207
 P1_BOTTOM   = $0210
+
+P1_ATTR     = $020A
 
 P2_TOP      = $0214
 P2_LEFT     = $0217

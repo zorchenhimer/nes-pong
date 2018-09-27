@@ -1,7 +1,25 @@
+InitGameOver:
+    lda #GS_DED
+    sta GameState
+
+    inc GSUpdateNeeded
+
+    jmp cont_UpdateScores
+
 UpdateScores:
+    lda p1Score
+    cmp #MAX_SCORE
+    beq InitGameOver
+
+    lda p2Score
+    cmp #MAX_SCORE
+    beq InitGameOver
+
     lda p1Score
     sta score_ones
     jsr ScoreMath
+
+cont_UpdateScores
 
     ldy #$00
 

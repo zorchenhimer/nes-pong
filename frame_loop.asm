@@ -1,5 +1,14 @@
 
 DoFrame:
+    ; reset the background queue pointer
+    lda #$00
+    sta bgQueue
+    lda #$04
+    sta bgQueue+1
+
+    lda #0
+    sta bgWrites
+
     jsr ReadControllers
     lda GameState
     cmp #GS_GAME
@@ -23,6 +32,18 @@ framePaused:
     jmp frameEnd
 
 frameGameOver:
+    jsr ClearSprites
+
+    lda #BUTTON_START
+    sta btnPressedMask
+
+    jsr ButtonPressedP1
+    beq frameEnd
+
+    lda #GS_TITLE
+    sta GameState
+
+    inc GSUpdateNeeded
     jmp frameEnd
 
 frameEnd:

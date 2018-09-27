@@ -7,6 +7,8 @@
 ; subroutine
 ; ---------------------------
 UpdateGameState:
+    inc SkipNMI
+
     lda #0
     sta GSUpdateNeeded
 
@@ -63,6 +65,7 @@ titleSpriteLoop:
     ;sta FrameUpdates
     ;lda #%10010000
     ;sta $2000   ; enable NMI, sprites from pattern table 0
+    dec SkipNMI
     rts
 
 ; -------------------------
@@ -104,16 +107,56 @@ SpriteLoop:
     sta start_ticks
     ;lda #%10010000
     ;sta $2000   ; enable NMI, sprites from pattern table 0
+    dec SkipNMI
     rts
 
 ; -------------------------
 ; Load Game Over gamestate
 ; -------------------------
 gsDed:
-    ; 1 - write "GAME OVER" text
     ; 2 - deterimine winner
     ; 3 - write winner to screen
-    ; 4 - (not here) wait for start button -> title
+    ;   Player One
+    ;   Player Two
+    ;   Computer Player
+    ;   "Wins"
+
+    lda p1Score
+    cmp p2Score
+    bcc p2Won
+
+    ; P1 Won
+    lda DedBG_Table
+    sta bgPointer
+
+    lda DedBG_Table+1
+    sta bgPointer+1
+    jmp gsDedEnd
+
+p2Won:
+    lda TitleSelected
+    beq compWon
+
+    lda DedBG_Table+2
+    sta bgPointer
+
+    lda DedBG_Table+3
+    sta bgPointer+1
+    jmp gsDedEnd
+
+compWon:
+    lda DedBG_Table+4
+    sta bgPointer
+
+    lda DedBG_Table+5
+    sta bgPointer+1
+
+gsDedEnd:
+    lda #$FF
+    sta bgUpdateFlags
+    jsr UpdateBackground
+
+    dec SkipNMI
     rts
 
 ClearSprites:
@@ -171,8 +214,10 @@ TitleBGData:
     .db $07, $40, 'V', 'S', ' ', 'C', 'O', 'M', 'P'
     .db $39, $C0, $01
     .db $08, $40, '2', ' ', 'P', 'L', 'A', 'Y', 'E', 'R'
+    .db $38, $C0, $01
+    .db $0A, $40, 'S', 'O', 'U', 'N', 'D', ' ', 'T', 'E', 'S', 'T'
     .db $FF, $C0, $01
-    .db $6C, $C0, $01
+    .db $2A, $C0, $01
 
     ; attribute data
     .db $40, $C0, $55
@@ -196,31 +241,61 @@ GameBGData:
     .db $30, $C0, $00
     .db $08, $C0, $0F
 
-    ; 2nd nametable 
-    .db $02, $00, $24, $64, '0', '0'   ; should be at $2064
-    .db $02, $00, $24, $7A, '0', '0'   ; should be at $2064
+    ; 2nd nametable - Pause box
+    ;.db $02, $00, $24, $64, '0', '0'   ; should be at $2064
+    ;.db $02, $00, $24, $7A, '0', '0'   ; should be at $2064
 
-    .db $01, $00, $25, $8C, $06     ; left corner
-    .db $06, $C0, $02       ; top line
-    .db $01, $40, $07       ; right corner
+    ;.db $01, $00, $25, $8C, $06     ; left corner
+    ;.db $06, $C0, $02       ; top line
+    ;.db $01, $40, $07       ; right corner
 
-    .db $01, $00, $25, $AC, $04
-    .db $06, $40, 'P', 'A', 'U', 'S', 'E', 'D'
+    ;.db $01, $00, $25, $AC, $04
+    ;.db $06, $40, 'P', 'A', 'U', 'S', 'E', 'D'
+    ;;.db $06, $C0, $01       ; box bg
+    ;.db $01, $40, $05
+
+    ;.db $01, $00, $25, $CC, $04
     ;.db $06, $C0, $01       ; box bg
-    .db $01, $40, $05
+    ;.db $01, $40, $05
 
-    .db $01, $00, $25, $CC, $04
-    .db $06, $C0, $01       ; box bg
-    .db $01, $40, $05
+    ;.db $01, $00, $25, $EC, $08     ; left corner
+    ;.db $06, $C0, $03       ; bottom line
+    ;.db $01, $40, $09       ; right corner
 
-    .db $01, $00, $25, $EC, $08     ; left corner
-    .db $06, $C0, $03       ; bottom line
-    .db $01, $40, $09       ; right corner
+    ; 2nd nametable - Game Over
+    .db $FF, $80, $24, $00, $01
+    .db $0A, $C0, $01
+    ; 8 tiles in
+    .db $0B, $40;, $25, $09
+    .db $80, $81, $82, $83, $84, $85, $86, $87
+    .db $88, $89, $8A
+
+    .db $15, $C0, $01
+
+    .db $0B, $40;, $25, $29
+    .db $90, $91, $92, $93, $94, $95, $96, $97
+    .db $98, $99, $9A
+
+    .db $18, $C0, $01
+
+    .db $0B, $40;, $25, $4C
+    .db $A0, $A1, $A2, $A3, $A4, $A5, $A6, $A7
+    .db $A8, $A9, $AA
+
+    .db $15, $C0, $01
+
+    .db $0B, $00, $25, $6C
+    .db $B0, $B1, $B2, $B3, $B4, $B5, $B6, $B7
+    .db $B8, $B9, $BA
+
+    .db $FF, $80, $25, $77, $01
+    .db $FF, $C0, $01
+    .db $4B, $C0, $01
 
     ; attribute data
-    .db $08, $80, $27, $C0, $0F
-    .db $02, $80, $27, $DB, $55
-    .db $08, $80, $27, $F8, $0F
+    .db $40, $80, $27, $C0, $55
+    ;.db $02, $80, $27, $DB, $55
+    ;.db $08, $80, $27, $F8, $0F
     .db $00
 
     ; attribute data
@@ -252,3 +327,25 @@ SpriteData:
     .db $8F, $04, %00000000, $F0    ; Paddle middle A
     .db $94, $03, %00000000, $F0    ; Paddle bottom
 
+DedBG_Table:
+    .word DedBGOne
+    .word DedBGTwo
+    .word DedBGComp
+
+; player 1
+DedBGOne:
+    .db $0A, $00, $25, $CB, 'P', 'L', 'A', 'Y', 'E', 'R', ' ', 'O', 'N', 'E'
+    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $00
+
+; player 2
+DedBGTwo:
+    .db $0A, $00, $25, $CB, 'P', 'L', 'A', 'Y', 'E', 'R', ' ', 'T', 'W', 'O'
+    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $00
+
+; computer player
+DedBGComp:
+    .db $0F, $00, $25, $C9, 'C', 'O', 'M', 'P', 'U', 'T', 'E', 'R', ' ', 'P', 'L', 'A', 'Y', 'E', 'R'
+    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $00
