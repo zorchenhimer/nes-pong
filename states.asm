@@ -211,11 +211,19 @@ TitleBGData:
     .db $F6, $C0, $01
     ;.db $17, $C0, $01
 
-    .db $07, $40, 'V', 'S', ' ', 'C', 'O', 'M', 'P'
+    .db $07, $40
+    .db "VS COMP"
+
     .db $39, $C0, $01
-    .db $08, $40, '2', ' ', 'P', 'L', 'A', 'Y', 'E', 'R'
+
+    .db $08, $40
+    .db "2 PLAYER"
+
     .db $38, $C0, $01
-    .db $0A, $40, 'S', 'O', 'U', 'N', 'D', ' ', 'T', 'E', 'S', 'T'
+
+    .db $0A, $40
+    .db "SOUND TEST"
+
     .db $FF, $C0, $01
     .db $2A, $C0, $01
 
@@ -241,44 +249,24 @@ GameBGData:
     .db $30, $C0, $00
     .db $08, $C0, $0F
 
-    ; 2nd nametable - Pause box
-    ;.db $02, $00, $24, $64, '0', '0'   ; should be at $2064
-    ;.db $02, $00, $24, $7A, '0', '0'   ; should be at $2064
-
-    ;.db $01, $00, $25, $8C, $06     ; left corner
-    ;.db $06, $C0, $02       ; top line
-    ;.db $01, $40, $07       ; right corner
-
-    ;.db $01, $00, $25, $AC, $04
-    ;.db $06, $40, 'P', 'A', 'U', 'S', 'E', 'D'
-    ;;.db $06, $C0, $01       ; box bg
-    ;.db $01, $40, $05
-
-    ;.db $01, $00, $25, $CC, $04
-    ;.db $06, $C0, $01       ; box bg
-    ;.db $01, $40, $05
-
-    ;.db $01, $00, $25, $EC, $08     ; left corner
-    ;.db $06, $C0, $03       ; bottom line
-    ;.db $01, $40, $09       ; right corner
-
     ; 2nd nametable - Game Over
     .db $FF, $80, $24, $00, $01
     .db $0A, $C0, $01
+
     ; 8 tiles in
-    .db $0B, $40;, $25, $09
+    .db $0B, $40    ; address $2509
     .db $80, $81, $82, $83, $84, $85, $86, $87
     .db $88, $89, $8A
 
     .db $15, $C0, $01
 
-    .db $0B, $40;, $25, $29
+    .db $0B, $40    ; address $2529
     .db $90, $91, $92, $93, $94, $95, $96, $97
     .db $98, $99, $9A
 
     .db $18, $C0, $01
 
-    .db $0B, $40;, $25, $4C
+    .db $0B, $40    ; address $254C
     .db $A0, $A1, $A2, $A3, $A4, $A5, $A6, $A7
     .db $A8, $A9, $AA
 
@@ -294,15 +282,7 @@ GameBGData:
 
     ; attribute data
     .db $40, $80, $27, $C0, $55
-    ;.db $02, $80, $27, $DB, $55
-    ;.db $08, $80, $27, $F8, $0F
     .db $00
-
-    ; attribute data
-    ;.db $08, $C0, $0F
-    ;.db $30, $C0, $00
-    ;.db $08, $C0, $0F
-    ;.db $00
 
 SpriteData:
     ; Sprite Attribute Stuff
@@ -334,18 +314,24 @@ DedBG_Table:
 
 ; player 1
 DedBGOne:
-    .db $0A, $00, $25, $CB, 'P', 'L', 'A', 'Y', 'E', 'R', ' ', 'O', 'N', 'E'
-    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $0A, $00, $25, $CB
+    .db "PLAYER ONE"
+    .db $04, $00, $25, $ED
+    .db "WINS"
     .db $00
 
 ; player 2
 DedBGTwo:
-    .db $0A, $00, $25, $CB, 'P', 'L', 'A', 'Y', 'E', 'R', ' ', 'T', 'W', 'O'
-    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $0A, $00, $25, $CB
+    .db "PLAYER TWO"
+    .db $04, $00, $25, $ED
+    .db "WINS"
     .db $00
 
 ; computer player
 DedBGComp:
-    .db $0F, $00, $25, $C9, 'C', 'O', 'M', 'P', 'U', 'T', 'E', 'R', ' ', 'P', 'L', 'A', 'Y', 'E', 'R'
-    .db $04, $00, $25, $ED, 'W', 'I', 'N', 'S'
+    .db $0F, $00, $25, $C9
+    .db "COMPUTER PLAYER"
+    .db $04, $00, $25, $ED
+    .db "WINS"
     .db $00
