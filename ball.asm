@@ -140,6 +140,10 @@ ballxcheck4:
 
 p1Bounce:
     ; ball is in collision box
+    lda #$02
+    sta sfx_id
+    jsr Sound_Load
+
     lda #0
     sta BallLeft
 
@@ -155,6 +159,10 @@ BallCheckLeftWall:
     jsr ResetBall
     lda #0
     sta BallLeft
+
+    lda #$03
+    sta sfx_id
+    jsr Sound_Load
 
     jmp UpdateScores
 
@@ -193,6 +201,10 @@ ballycheck2:
 
     ; ball is in paddle
 ballp2bounce:
+    lda #$02
+    sta sfx_id
+    jsr Sound_Load
+
     lda #1
     sta BallLeft
     jmp BallUpdateDone
@@ -206,6 +218,10 @@ BallCheckRightWall:
     jsr ResetBall
     lda #1
     sta BallLeft
+
+    lda #$03
+    sta sfx_id
+    jsr Sound_Load
 
     jmp UpdateScores
 

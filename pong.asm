@@ -6,6 +6,11 @@
 ; TODO:
 ;   improve collision detection
 ;       figure out the math for this
+;   sounds
+;       menu selection
+;       ball bounce
+;       game over
+;       pause
 
     .include "ram.asm"
 
@@ -72,6 +77,9 @@ LoadPaletteLoop:
     sta GameState
     jsr UpdateGameState
 
+    lda #$FF
+    sta title_sound
+
     .include "frame_loop.asm"
     .include "sound_engine.asm"
 
@@ -83,6 +91,10 @@ CheckPause:
     rts
 
 uPauseToggle:
+    lda #$01
+    sta sfx_id
+    jsr Sound_Load
+
     lda GamePaused
     beq uSetPause
 
@@ -157,7 +169,18 @@ utitle_stc:
     lda TitleSelected
     cmp #$02
     bne titleStartGame
+
     ; do sound stuff
+    inc title_sound
+    lda title_sound
+    cmp #$04
+    bcc .nowrap
+    lda #0
+    sta title_sound
+.nowrap:
+
+    lda title_sound
+    sta sfx_id
     jmp Sound_Load
     rts
 
@@ -192,22 +215,6 @@ utitleSprite:
     tay
     lda TitleSpritePositions, y
     sta TitleCursor
-;    beq utitle_sel_2p
-;
-;    ; vs comp
-;    lda #$00
-;    sta TitleSelected
-;    lda #$7F
-;    sta TitleCursor
-;    rts
-;
-;; 2 player game mode selected
-;utitle_sel_2p:
-;    ; 2 player
-;    lda #$01
-;    sta TitleSelected
-;    lda #$8F
-;    sta TitleCursor
     rts
 
 TitleSpritePositions:

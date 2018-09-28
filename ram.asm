@@ -50,6 +50,7 @@ GSUpdateNeeded  .rs 1
 
 TitleSelected   .rs 1
 GamePaused      .rs 1
+title_sound     .rs 1
 
 btnPressedMask      .rs 1   ; the button to check
 ;btnPressedReturn    .rs 1   ; return value
@@ -82,6 +83,8 @@ sfx_playing     .rs 1
 sfx_index       .rs 1
 sfx_frame       .rs 1
 sfx_disabled    .rs 1
+sfx_id          .rs 1
+sfx_address     .rs 2
 
     .rsset $0200
 SpriteRAM      .rs 256

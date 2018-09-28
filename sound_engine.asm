@@ -14,9 +14,12 @@ Sound_Init:
     ; clear flags
     lda #0
     sta sfx_disabled
-    sta sfx_frame
     sta sfx_playing
     sta sfx_index
+    sta sfx_frame
+
+    sta sfx_address
+    sta sfx_address+1
     rts
 
 Sound_Disable:
@@ -27,6 +30,16 @@ Sound_Disable:
     rts
 
 Sound_Load:
+    lda sfx_id
+    asl a
+    tay
+
+    lda table_sfx, y
+    sta sfx_address
+
+    lda table_sfx+1, y
+    sta sfx_address+1
+
     ; set playing flag
     lda #$01
     sta sfx_playing
@@ -49,11 +62,11 @@ Sound_PlayFrame:
     ; update one every X frames
     inc sfx_frame
     lda sfx_frame
-    cmp #$08        ; TODO: make this a constant?
+    cmp #$06        ; TODO: make this a constant?
     bne .done
 
     ldy sfx_index
-    lda sfx_data, y
+    lda [sfx_address], y
 
     ; data is $FF terminated
     cmp #$FF
@@ -96,6 +109,24 @@ Sound_PlayFrame:
 .done
     rts
 
-sfx_data:
+table_sfx:
+    .dw sfx_test, sfx_pause, sfx_bounce, sfx_score, sfx_gameOver, sfx_countdown
+
+sfx_test:   ; sound test
+    ;    $0F,$11
     .byte C3, D3, Ds3, G3, C4, D4, Ds4, G4
     .byte C5, D5, Ds5, G5, C6, D6, Ds6, G6, C7, $FF     ;Cm/9
+
+sfx_pause:
+    ;    $3F,$3A
+    .byte C7, G6, C7, G6, $FF
+
+sfx_bounce:
+    .byte C2, $FF
+
+sfx_score:
+    .byte C4, D4, Ds4, $FF
+
+sfx_gameOver:
+
+sfx_countdown:
