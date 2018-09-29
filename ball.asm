@@ -160,10 +160,6 @@ BallCheckLeftWall:
     lda #0
     sta BallLeft
 
-    lda #$03
-    sta sfx_id
-    jsr Sound_Load
-
     jmp UpdateScores
 
     jmp BallUpdateDone
@@ -218,10 +214,6 @@ BallCheckRightWall:
     jsr ResetBall
     lda #1
     sta BallLeft
-
-    lda #$03
-    sta sfx_id
-    jsr Sound_Load
 
     jmp UpdateScores
 

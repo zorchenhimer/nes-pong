@@ -62,11 +62,15 @@ Sound_PlayFrame:
     ; update one every X frames
     inc sfx_frame
     lda sfx_frame
-    cmp #$06        ; TODO: make this a constant?
+    cmp #$06
     bne .done
 
     ldy sfx_index
     lda [sfx_address], y
+
+    ; $FE = "no change" or just keep playing the last note.
+    cmp #$FE
+    beq .cont
 
     ; data is $FF terminated
     cmp #$FF
@@ -102,6 +106,7 @@ Sound_PlayFrame:
     lda #$08
     sta $4001
 
+.cont
     inc sfx_index
     lda #0
     sta sfx_frame
@@ -110,7 +115,8 @@ Sound_PlayFrame:
     rts
 
 table_sfx:
-    .dw sfx_test, sfx_pause, sfx_bounce, sfx_score, sfx_gameOver, sfx_countdown
+    .dw sfx_test,       sfx_pause,      sfx_bounce,         sfx_score
+    .dw sfx_gameOver,   sfx_countdown,  sfx_countdownStart, sfx_title
 
 sfx_test:   ; sound test
     ;    $0F,$11
@@ -128,5 +134,13 @@ sfx_score:
     .byte C4, D4, Ds4, $FF
 
 sfx_gameOver:
+    .byte C5, $FE, D5, $FE, Ds5, $FE, $FF
 
 sfx_countdown:
+    .byte D5, $FE, $FF
+
+sfx_countdownStart:
+    .byte G5, $FE, $FE, $FE, $FF
+
+sfx_title:
+    .byte C3, $FF

@@ -4,6 +4,11 @@ InitGameOver:
 
     inc GSUpdateNeeded
 
+    ; Play Game Over sfx
+    lda #$04
+    sta sfx_id
+    jsr Sound_Load
+
     jmp cont_UpdateScores
 
 UpdateScores:
@@ -14,6 +19,11 @@ UpdateScores:
     lda p2Score
     cmp #MAX_SCORE
     beq InitGameOver
+
+    ; Play score sfx
+    lda #$03
+    sta sfx_id
+    jsr Sound_Load
 
     lda p1Score
     sta score_ones

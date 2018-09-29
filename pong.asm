@@ -3,15 +3,6 @@
     .inesmap 0      ; mapper 0 = NROM, no bank swapping
     .inesmir 1      ; background mirroring (ignore for now)
 
-; TODO:
-;   improve collision detection
-;       figure out the math for this
-;   sounds
-;       menu selection
-;       ball bounce
-;       game over
-;       pause
-
     .include "ram.asm"
 
     ; Main code
@@ -170,10 +161,10 @@ utitle_stc:
     cmp #$02
     bne titleStartGame
 
-    ; do sound stuff
+    ; "Sound Test" menu item.  Loop through all the SFX.
     inc title_sound
     lda title_sound
-    cmp #$04
+    cmp #$08
     bcc .nowrap
     lda #0
     sta title_sound
@@ -201,8 +192,14 @@ titleSelect:
     bne utitle_c
     rts
 
-; button was pressed
+; select button was pressed
 utitle_c:
+
+    ; SFX for menu item change
+    lda #$07
+    sta sfx_id
+    jsr Sound_Load
+
     inc TitleSelected
     lda TitleSelected
     cmp #$03
