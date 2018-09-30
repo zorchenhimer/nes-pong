@@ -157,9 +157,19 @@ UpdateTitle:
 
 ; start pressed this frame
 utitle_stc:
+    lda #%11010000
+    cmp controller1
+    bne .selectionCheck
+
+    lda #GS_CREDITS
+    sta GameState
+    jmp Credits_Init
+
+.selectionCheck
     lda TitleSelected
     cmp #$02
     bne titleStartGame
+
 
     ; "Sound Test" menu item.  Loop through all the SFX.
     inc title_sound
@@ -347,6 +357,8 @@ btnPress_stc:
     .include "states.asm"
     .include "players.asm"
 
+    .include "credits.asm"
+
 IRQ:
     ; just sit here... in theory
     jmp IRQ
@@ -356,12 +368,16 @@ IRQ:
     .org $E000
 
 PaletteData:
-    .db $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
+    .db $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$15,$0F,$0F, $0F,$11,$11,$11
     .db $0F,$10,$00,$30, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
 
 PausedPalette:
     .db $0F,$14,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$01,$01,$01
     .db $0F,$00,$2D,$10, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
+
+CreditsPalette:
+    .db $0F,$30,$0F,$0F, $0F,$0F,$0F,$13, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
+    .db $0F,$30,$13,$0F, $0F,$05,$15,$0F, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
 
 PauseTable:
     .word PausedAttributes
@@ -378,7 +394,8 @@ PausedAttributes:
     ;.db $06, $C0, $01       ; box bg
     ;.db $01, $40, $05
     .db $08, $00, $21, $AC, $04
-    .db "PAUSED"
+    ;.db "PAUSED"
+    .db $80, $81, $82, $83, $84, $85
     .db $05
 
     ;.db $01, $00, $21, $CC, $04

@@ -86,6 +86,8 @@ sfx_disabled    .rs 1
 sfx_id          .rs 1
 sfx_address     .rs 2
 
+    .include "credits_ram.asm"
+
     .rsset $0200
 SpriteRAM      .rs 256
 PaletteRAM      .rs 32
@@ -99,6 +101,7 @@ bgBuffer        .rs 256
 ; ---------------------------
 MAX_SCORE   = 5
 
+GS_CREDITS  = 3
 GS_TITLE    = 2
 GS_GAME     = 1
 GS_DED      = 0

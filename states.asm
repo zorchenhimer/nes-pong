@@ -33,9 +33,19 @@ UpdateGameState:
 ; Load Title gamestate
 ; -------------------------
 gsTitle:
+    lda #0
+    sta TitleSelected
 
     ;lda #0
     ;sta $2000
+
+    ldx #0
+.loop
+    lda PaletteData, x
+    sta PaletteRAM, x
+    inx
+    cpx #$20
+    bne .loop
 
     lda BGData_Lookup
     sta bgPointer
@@ -193,14 +203,14 @@ TitleBGData:
     .db $14, $C0, $01   ; blank until start of logo
 
     ; logo top row
-    .db $0B, $40, $60, $61, $62, $63, $64
-    .db $65, $66, $67, $68, $69, $6A
+    .db $0B, $40, $A0, $A1, $A2, $A3, $A4
+    .db $A5, $A6, $A7, $A8, $A9, $AA
 
     .db $15, $C0, $01   ; black until 2nd row of logo
 
     ; logo bottom row
-    .db $0B, $40, $70, $71, $72, $73, $74
-    .db $75, $76, $77, $78, $79, $7A
+    .db $0B, $40, $B0, $B1, $B2, $B3, $B4
+    .db $B5, $B6, $B7, $B8, $B9, $BA
 
     .db $14, $C0, $01   ; blank until start of bottom box
     .db $01, $40, $08   ; left corner
@@ -228,7 +238,8 @@ TitleBGData:
     .db $2A, $C0, $01
 
     ; attribute data
-    .db $40, $C0, $55
+    .db $20, $C0, $55
+    .db $20, $C0, $AA
     .db $00
 
 titleSpriteData:
@@ -255,33 +266,34 @@ GameBGData:
 
     ; 8 tiles in
     .db $0B, $40    ; address $2509
-    .db $80, $81, $82, $83, $84, $85, $86, $87
-    .db $88, $89, $8A
+    .db $C0, $C1, $C2, $C3, $C4, $C5, $C6, $C7
+    .db $C8, $C9, $CA
 
     .db $15, $C0, $01
 
     .db $0B, $40    ; address $2529
-    .db $90, $91, $92, $93, $94, $95, $96, $97
-    .db $98, $99, $9A
+    .db $D0, $D1, $D2, $D3, $D4, $D5, $D6, $D7
+    .db $D8, $D9, $DA
 
     .db $18, $C0, $01
 
     .db $0B, $40    ; address $254C
-    .db $A0, $A1, $A2, $A3, $A4, $A5, $A6, $A7
-    .db $A8, $A9, $AA
+    .db $E0, $E1, $E2, $E3, $E4, $E5, $E6, $E7
+    .db $E8, $E9, $EA
 
     .db $15, $C0, $01
 
     .db $0B, $00, $25, $6C
-    .db $B0, $B1, $B2, $B3, $B4, $B5, $B6, $B7
-    .db $B8, $B9, $BA
+    .db $F0, $F1, $F2, $F3, $F4, $F5, $F6, $F7
+    .db $F8, $F9, $FA
 
     .db $FF, $80, $25, $77, $01
     .db $FF, $C0, $01
     .db $4B, $C0, $01
 
     ; attribute data
-    .db $40, $80, $27, $C0, $55
+    .db $18, $80, $27, $C0, $55
+    .db $28, $C0, $AA
     .db $00
 
 SpriteData:

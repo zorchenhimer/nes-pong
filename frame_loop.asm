@@ -11,12 +11,43 @@ DoFrame:
 
     jsr ReadControllers
     lda GameState
+    cmp #GS_CREDITS
+    beq frameCredits
+
+    lda GameState
     cmp #GS_GAME
     bcc frameGameOver
     beq frameGameplay
 
 frameTitle:
     jsr UpdateTitle
+    jmp frameEnd
+
+frameCredits:
+    lda #BUTTON_A
+    sta btnPressedMask
+    jsr ButtonPressedP1
+    beq .crB
+    jmp .creditsEnd
+
+.crB:
+    lda #BUTTON_B
+    sta btnPressedMask
+    jsr ButtonPressedP1
+    beq .crSt
+    jmp .creditsEnd
+
+.crSt:
+    lda #BUTTON_START
+    sta btnPressedMask
+    jsr ButtonPressedP1
+    beq frameEnd
+    jmp .creditsEnd
+
+.creditsEnd:
+    lda #GS_TITLE
+    sta GameState
+    inc GSUpdateNeeded
     jmp frameEnd
 
 frameGameplay:
