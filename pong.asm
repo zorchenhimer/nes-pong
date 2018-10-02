@@ -5,6 +5,9 @@
 
     .include "ram.asm"
 
+; Uncomment the following line for PAL (corrects audio)
+;PAL
+
     ; Main code
     .bank 0
     .org $8000
@@ -427,7 +430,12 @@ UnPausedAttributes:
     ;.db $08, $C0, $0F
     ;.db $00
 
+
+    .ifdef PAL
+    .include "note_table_pal.i"
+    .else
     .include "note_table.i"
+    .endif
 
 ; Vectors (interupts?)
     .org $FFFA  ; first of three vectors starts here
