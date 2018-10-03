@@ -136,27 +136,42 @@ credits_Header:
     lda #$4A
     sta $2006
 
-    ldx #0
+    ;ldx #0
+    ldy #$0A
 .loop1:
-    lda credits_header01, x
-    sta $2007
-    inx
-    cpx #10
+    ;lda credits_header01, x
+    sty $2007
+    iny
+    cpy #$10
     bne .loop1
 
-    ; bottom text: "zorchenhimer"
+    ; top half: "zorchenhimer"
     lda #$20
     sta $2006
     lda #$6A
     sta $2006
 
     ldx #0
-.loop2:
-    lda credits_header02, x
-    sta $2007
-    inx
-    cpx #12
+    ldy #$80
+.loop2
+    sty $2007
+    iny
+    cpy #$8F
     bne .loop2
+
+    ; Bottom half: "Zorchenhimer"
+    lda #$20
+    sta $2006
+    lda #$8A
+    sta $2006
+
+    ldx #0
+    ldy #$90
+.loop3
+    sty $2007
+    iny
+    cpy #$9F
+    bne .loop3
 
     lda #$20
     sta $2006
@@ -164,12 +179,12 @@ credits_Header:
     sta $2006
 
     ldx #0
-.loop3
+.loop4
     lda credits_header03, x
     sta $2007
     inx
     cpx #10
-    bne .loop3
+    bne .loop4
     rts
 
 credits_DrawNames:
@@ -237,10 +252,6 @@ credits_DrawNames:
     sta cr_ppuAddr
     jmp .outer
 
-credits_header01:
-    .db "twitch.tv/"
-credits_header02:
-    .db "zorchenhimer"
 credits_header03:
     .db "THANK YOU!"
 
