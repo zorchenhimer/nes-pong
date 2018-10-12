@@ -39,28 +39,28 @@ Credits_Init:
 
 credits_LoadPalette:
     ldx #0
-.loop
+@loop:
     lda CreditsPalette, x
     sta PaletteRAM, x
     inx
     cpx #32
-    bne .loop
+    bne @loop
     rts
 
 credits_ClearNametable:
     ldx #0
     ldy #0
     lda #$40
-.loop2:
+@loop2:
     sta $2007
     inx
     cpx #$20
-    bne .loop2
+    bne @loop2
 
     iny
     ldx #0
     cpy #$1E
-    bne .loop2
+    bne @loop2
 
     lda #$55
     sta $2007
@@ -71,10 +71,10 @@ credits_ClearNametable:
 
     ldx #6
     lda #$00
-.loopAttr1:
+@loopAttr1:
     stx $2007
     dex
-    bne .loopAttr1
+    bne @loopAttr1
 
     lda #$55
     sta $2007
@@ -83,10 +83,10 @@ credits_ClearNametable:
 
     ldx #52
     lda #$00
-.loopAttr
+@loopAttr:
     sta $2007
     dex
-    bne .loopAttr
+    bne @loopAttr
     rts
 
 credits_Header:
@@ -138,12 +138,12 @@ credits_Header:
 
     ;ldx #0
     ldy #$0A
-.loop1:
+@loop1:
     ;lda credits_header01, x
     sty $2007
     iny
     cpy #$10
-    bne .loop1
+    bne @loop1
 
     ; top half: "zorchenhimer"
     lda #$20
@@ -153,11 +153,11 @@ credits_Header:
 
     ldx #0
     ldy #$80
-.loop2
+@loop2:
     sty $2007
     iny
     cpy #$8F
-    bne .loop2
+    bne @loop2
 
     ; Bottom half: "Zorchenhimer"
     lda #$20
@@ -167,11 +167,11 @@ credits_Header:
 
     ldx #0
     ldy #$90
-.loop3
+@loop3:
     sty $2007
     iny
     cpy #$9F
-    bne .loop3
+    bne @loop3
 
     lda #$20
     sta $2006
@@ -179,12 +179,12 @@ credits_Header:
     sta $2006
 
     ldx #0
-.loop4
+@loop4:
     lda credits_header03, x
     sta $2007
     inx
     cpx #10
-    bne .loop4
+    bne @loop4
     rts
 
 credits_DrawNames:
@@ -204,7 +204,7 @@ credits_DrawNames:
     sta cr_ppuAddr+1
 
 ; table loop
-.outer
+@outer:
     bit $2002
     lda cr_ppuAddr
     sta $2006
@@ -223,24 +223,24 @@ credits_DrawNames:
 
 ; name loop
     ldy #0
-    lda [cr_nameAddress], y
+    lda (cr_nameAddress), y
     sta cr_nameLength
     inc cr_nameLength   ; to fix an off-by-one error
     iny
 
-.inner
-    lda [cr_nameAddress], y
+@inner:
+    lda (cr_nameAddress), y
     sta $2007
     iny
     cpy cr_nameLength
-    bne .inner
+    bne @inner
 
     ; move on to the next name
     dec cr_nameCount
-    bne .next
+    bne @next
     rts
 
-.next
+@next:
     inc cr_nameCurrent
     lda cr_ppuAddr+1
     clc
@@ -250,9 +250,9 @@ credits_DrawNames:
     lda cr_ppuAddr
     adc #0
     sta cr_ppuAddr
-    jmp .outer
+    jmp @outer
 
 credits_header03:
-    .db "THANK YOU!"
+    .byte "THANK YOU!"
 
     .include "credits_data.i"

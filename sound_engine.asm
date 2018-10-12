@@ -53,28 +53,28 @@ Sound_Load:
 Sound_PlayFrame:
     ; don't advance if disabled
     lda sfx_disabled
-    bne .done
+    bne @done
 
     ; don't advance if not playing
     lda sfx_playing
-    beq .done
+    beq @done
 
     ; update one every X frames
     inc sfx_frame
     lda sfx_frame
     cmp #$06
-    bne .done
+    bne @done
 
     ldy sfx_index
-    lda [sfx_address], y
+    lda (sfx_address), y
 
     ; $FE = "no change" or just keep playing the last note.
     cmp #$FE
-    beq .cont
+    beq @cont
 
     ; data is $FF terminated
     cmp #$FF
-    bne .note
+    bne @note
 
     ; stop sound and return
     lda #$30
@@ -85,7 +85,7 @@ Sound_PlayFrame:
     sta sfx_frame
     rts
 
-.note
+@note:
     ; get index (mult by two; table is a list of words)
     asl a
     tay
@@ -106,17 +106,17 @@ Sound_PlayFrame:
     lda #$08
     sta $4001
 
-.cont
+@cont:
     inc sfx_index
     lda #0
     sta sfx_frame
 
-.done
+@done:
     rts
 
 table_sfx:
-    .dw sfx_test,       sfx_pause,      sfx_bounce,         sfx_score
-    .dw sfx_gameOver,   sfx_countdown,  sfx_countdownStart, sfx_title
+    .word sfx_test,       sfx_pause,      sfx_bounce,         sfx_score
+    .word sfx_gameOver,   sfx_countdown,  sfx_countdownStart, sfx_title
 
 sfx_test:   ; sound test
     ;    $0F,$11

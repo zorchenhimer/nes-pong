@@ -20,26 +20,26 @@ DoCountdown:
     ; Figure out which sfx to play
     lda start_count
     cmp #$02
-    beq .sndStart
-    bcc .sndEnd ; clear screen.  don't play sfx
+    beq @sndStart
+    bcc @sndEnd ; clear screen.  don't play sfx
 
     ; "03" doesn't get a sfx.  it'll override the scoring sfx.
     cmp #$05
-    beq .sndEnd
+    beq @sndEnd
 
     ; Play sfx for "02" and "01"
     lda #$05
     sta sfx_id
     jsr Sound_Load
-    jmp .sndEnd
+    jmp @sndEnd
 
-.sndStart:
+@sndStart:
     ; play sfx for "START"
     lda #$06
     sta sfx_id
     jsr Sound_Load
 
-.sndEnd:
+@sndEnd:
     lda FrameUpdates
     ora #%01000000
     sta FrameUpdates
@@ -64,17 +64,17 @@ CountdownData_Table:
     .word CountdownData_03
 
 CountdownData:
-    .db $06, $80, $20, $AE, $00, $00
+    .byte $06, $80, $20, $AE, $00, $00
 
 CountdownData_start:
-    .db $06, $00, $20, $AE, 'S', 'T', 'A', 'R', 'T', '!', $00
+    .byte $06, $00, $20, $AE, 'S', 'T', 'A', 'R', 'T', '!', $00
 
 CountdownData_01:
-    .db $02, $00, $20, $AE, '0', '1', $00
+    .byte $02, $00, $20, $AE, '0', '1', $00
 
 CountdownData_02:
-    .db $02, $00, $20, $AE, '0', '2', $00
+    .byte $02, $00, $20, $AE, '0', '2', $00
 
 CountdownData_03:
-    .db $02, $00, $20, $AE, '0', '3', $00
+    .byte $02, $00, $20, $AE, '0', '3', $00
 

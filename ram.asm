@@ -1,33 +1,33 @@
 
-    .rsset $0000
+    .segment "ZEROPAGE"
 ; Moving up or left?
-BallUp      .rs 1
-BallLeft    .rs 1
+BallUp:     .res 1
+BallLeft:   .res 1
 
-BallSpeedX  .rs 1
-BallSpeedY  .rs 1
+BallSpeedX: .res 1
+BallSpeedY: .res 1
 
-p1Score     .rs 1
-p2Score     .rs 1
+p1Score:    .res 1
+p2Score:    .res 1
 
-sleeping    .rs 1
+sleeping:   .res 1
 
-controller1     .rs 1
-controller2     .rs 1
-controller1Old  .rs 1
-controller2Old  .rs 1
+controller1:    .res 1
+controller2:    .res 1
+controller1Old: .res 1
+controller2Old: .res 1
 
-controllerTmp   .rs 1
-compController  .rs 1
-frameOdd        .rs 1
+controllerTmp:  .res 1
+compController: .res 1
+frameOdd:       .res 1
 
-ballFaster      .rs 1
+ballFaster:     .res 1
 
-PauseOn     .rs 1
-PauseOff    .rs 1
+PauseOn:    .res 1
+PauseOff:   .res 1
 
 ; countdown timer for ball
-start_count .rs 1
+start_count:.res 1
 ST_3        = 5
 ST_2        = 4
 ST_1        = 3
@@ -36,65 +36,68 @@ ST_CLEAR    = 1
 ST_RUNNING  = 0
 ST_LENGTH   = 45;$1E
 
-start_ticks .rs 1
-start_addr  .rs 2
+start_ticks:.res 1
+start_addr: .res 2
 
-flag_tmp    .rs 1
+flag_tmp:   .res 1
 
 ; 2 - Title
 ; 1 - Game
 ; 0 - Game Over
-GameState       .rs 1
-GSUpdateNeeded  .rs 1
-;NewGameState    .rs 1
+GameState:      .res 1
+GSUpdateNeeded: .res 1
+;NewGameState    .res 1
 
-TitleSelected   .rs 1
-GamePaused      .rs 1
-title_sound     .rs 1
+TitleSelected:  .res 1
+GamePaused:     .res 1
+title_sound:    .res 1
 
-btnPressedMask      .rs 1   ; the button to check
-;btnPressedReturn    .rs 1   ; return value
+btnPressedMask:     .res 1   ; the button to check
+;btnPressedReturn    .res 1   ; return value
 
 
-;dcPacketLength  .rs 1
-;dcQueuePointer  .rs 2
-;dcFlags         .rs 1
-;CountdownDataAddress .rs 2
+;dcPacketLength  .res 1
+;dcQueuePointer  .res 2
+;dcFlags         .res 1
+;CountdownDataAddress .res 2
 
-bgUpdateFlags   .rs 1
-bgLength        .rs 1
-bgFlags         .rs 1
-bgPointer       .rs 2
-bgQueue         .rs 2
-bgSkipQueueReset    .rs 1
-bgWrites        .rs 1
-;bgDataAddress   .rs 2
+bgUpdateFlags:  .res 1
+bgLength:       .res 1
+bgFlags:        .res 1
+bgPointer:      .res 2
+bgQueue:        .res 2
+bgSkipQueueReset:   .res 1
+bgWrites:       .res 1
+;bgDataAddress   .res 2
 
 ; use this one, i think?
 D_ATTRIBUTE     = %10000000
 D_BACKGROUND    = %01000000
-FrameUpdates    .rs 1
+FrameUpdates:   .res 1
 
-score_tens      .rs 1
-score_ones      .rs 1
+score_tens:     .res 1
+score_ones:     .res 1
 
-SkipNMI         .rs 1
-sfx_playing     .rs 1
-sfx_index       .rs 1
-sfx_frame       .rs 1
-sfx_disabled    .rs 1
-sfx_id          .rs 1
-sfx_address     .rs 2
+SkipNMI:        .res 1
+sfx_playing:    .res 1
+sfx_index:      .res 1
+sfx_frame:      .res 1
+sfx_disabled:   .res 1
+sfx_id:         .res 1
+sfx_address:    .res 2
 
     .include "credits_ram.asm"
 
-    .rsset $0200
-SpriteRAM      .rs 256
-PaletteRAM      .rs 32
-AttributeRAM    .rs 64
+.segment "OAM"
+SpriteRAM:      .res 256
 
-    .rsset $0400
-bgBuffer        .rs 256
+.segment "BSS"
+PaletteRAM:     .res 32
+AttributeRAM:   .res 64
+
+    ;.rsset $0400
+; this might explode everywhere
+bgBuffer:       .res 256
 
 ; ---------------------------
 ; Constants

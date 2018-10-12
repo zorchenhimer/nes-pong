@@ -40,12 +40,12 @@ gsTitle:
     ;sta $2000
 
     ldx #0
-.loop
+@loop:
     lda PaletteData, x
     sta PaletteRAM, x
     inx
     cpx #$20
-    bne .loop
+    bne @loop
 
     lda BGData_Lookup
     sta bgPointer
@@ -194,107 +194,107 @@ TitleBGData:
     ;   %0100 0000  Skip PPU Address
 
     ; blank background to start of box
-    .db $AA, $80, $20, $00, $01
+    .byte $AA, $80, $20, $00, $01
 
     ; box top
-    .db $01, $40, $06   ; left corner
-    .db $0B, $C0, $02   ; top line
-    .db $01, $40, $07   ; right corner
-    .db $14, $C0, $01   ; blank until start of logo
+    .byte $01, $40, $06   ; left corner
+    .byte $0B, $C0, $02   ; top line
+    .byte $01, $40, $07   ; right corner
+    .byte $14, $C0, $01   ; blank until start of logo
 
     ; logo top row
-    .db $0B, $40, $A0, $A1, $A2, $A3, $A4
-    .db $A5, $A6, $A7, $A8, $A9, $AA
+    .byte $0B, $40, $A0, $A1, $A2, $A3, $A4
+    .byte $A5, $A6, $A7, $A8, $A9, $AA
 
-    .db $15, $C0, $01   ; black until 2nd row of logo
+    .byte $15, $C0, $01   ; black until 2nd row of logo
 
     ; logo bottom row
-    .db $0B, $40, $B0, $B1, $B2, $B3, $B4
-    .db $B5, $B6, $B7, $B8, $B9, $BA
+    .byte $0B, $40, $B0, $B1, $B2, $B3, $B4
+    .byte $B5, $B6, $B7, $B8, $B9, $BA
 
-    .db $14, $C0, $01   ; blank until start of bottom box
-    .db $01, $40, $08   ; left corner
-    .db $0B, $C0, $03   ; bottom line
-    .db $01, $40, $09   ; right corner
+    .byte $14, $C0, $01   ; blank until start of bottom box
+    .byte $01, $40, $08   ; left corner
+    .byte $0B, $C0, $03   ; bottom line
+    .byte $01, $40, $09   ; right corner
 
     ; blank until menu start
-    .db $F6, $C0, $01
-    ;.db $17, $C0, $01
+    .byte $F6, $C0, $01
+    ;.byte $17, $C0, $01
 
-    .db $07, $40
-    .db "VS COMP"
+    .byte $07, $40
+    .byte "VS COMP"
 
-    .db $39, $C0, $01
+    .byte $39, $C0, $01
 
-    .db $08, $40
-    .db "2 PLAYER"
+    .byte $08, $40
+    .byte "2 PLAYER"
 
-    .db $38, $C0, $01
+    .byte $38, $C0, $01
 
-    .db $0A, $40
-    .db "SOUND TEST"
+    .byte $0A, $40
+    .byte "SOUND TEST"
 
-    .db $FF, $C0, $01
-    .db $2A, $C0, $01
+    .byte $FF, $C0, $01
+    .byte $2A, $C0, $01
 
     ; attribute data
-    .db $20, $C0, $55
-    .db $20, $C0, $AA
-    .db $00
+    .byte $20, $C0, $55
+    .byte $20, $C0, $AA
+    .byte $00
 
 titleSpriteData:
-    .db $7F, $05, $00, $5E
+    .byte $7F, $05, $00, $5E
 
 GameBGData:
-    .db $64, $80, $20, $00, $00
-    .db $02, $C0, '0'   ; should be at $2064
-    .db $14, $C0, $00
-    .db $02, $C0, '0'   ; should be at $207A
-    .db $FF, $C0, $00
-    .db $FF, $C0, $00
-    .db $FF, $C0, $00
-    .db $47, $C0, $00
+    .byte $64, $80, $20, $00, $00
+    .byte $02, $C0, '0'   ; should be at $2064
+    .byte $14, $C0, $00
+    .byte $02, $C0, '0'   ; should be at $207A
+    .byte $FF, $C0, $00
+    .byte $FF, $C0, $00
+    .byte $FF, $C0, $00
+    .byte $47, $C0, $00
 
     ; attribute data
-    .db $08, $C0, $0F
-    .db $30, $C0, $00
-    .db $08, $C0, $0F
+    .byte $08, $C0, $0F
+    .byte $30, $C0, $00
+    .byte $08, $C0, $0F
 
     ; 2nd nametable - Game Over
-    .db $FF, $80, $24, $00, $01
-    .db $0A, $C0, $01
+    .byte $FF, $80, $24, $00, $01
+    .byte $0A, $C0, $01
 
     ; 8 tiles in
-    .db $0B, $40    ; address $2509
-    .db $C0, $C1, $C2, $C3, $C4, $C5, $C6, $C7
-    .db $C8, $C9, $CA
+    .byte $0B, $40    ; address $2509
+    .byte $C0, $C1, $C2, $C3, $C4, $C5, $C6, $C7
+    .byte $C8, $C9, $CA
 
-    .db $15, $C0, $01
+    .byte $15, $C0, $01
 
-    .db $0B, $40    ; address $2529
-    .db $D0, $D1, $D2, $D3, $D4, $D5, $D6, $D7
-    .db $D8, $D9, $DA
+    .byte $0B, $40    ; address $2529
+    .byte $D0, $D1, $D2, $D3, $D4, $D5, $D6, $D7
+    .byte $D8, $D9, $DA
 
-    .db $18, $C0, $01
+    .byte $18, $C0, $01
 
-    .db $0B, $40    ; address $254C
-    .db $E0, $E1, $E2, $E3, $E4, $E5, $E6, $E7
-    .db $E8, $E9, $EA
+    .byte $0B, $40    ; address $254C
+    .byte $E0, $E1, $E2, $E3, $E4, $E5, $E6, $E7
+    .byte $E8, $E9, $EA
 
-    .db $15, $C0, $01
+    .byte $15, $C0, $01
 
-    .db $0B, $00, $25, $6C
-    .db $F0, $F1, $F2, $F3, $F4, $F5, $F6, $F7
-    .db $F8, $F9, $FA
+    .byte $0B, $00, $25, $6C
+    .byte $F0, $F1, $F2, $F3, $F4, $F5, $F6, $F7
+    .byte $F8, $F9, $FA
 
-    .db $FF, $80, $25, $77, $01
-    .db $FF, $C0, $01
-    .db $4B, $C0, $01
+    .byte $FF, $80, $25, $77, $01
+    .byte $FF, $C0, $01
+    .byte $4B, $C0, $01
 
     ; attribute data
-    .db $18, $80, $27, $C0, $55
-    .db $28, $C0, $AA
-    .db $00
+    .byte $18, $80, $27, $C0, $55
+    .byte $28, $C0, $AA
+    .byte $00
 
 SpriteData:
     ; Sprite Attribute Stuff
@@ -305,19 +305,19 @@ SpriteData:
     ; %0000 0011    Palette
 
     ;   Y,   Idx, Attr, X
-    .db $80, $01, %00000000, $80    ; Ball
+    .byte $80, $01, %00000000, $80    ; Ball
 
     ; Player 1
-    .db $80, $02, %00000000, $08    ; Paddle top
-    .db $88, $04, %00000000, $08    ; Paddle middle A
-    .db $8F, $04, %00000000, $08    ; Paddle middle A
-    .db $94, $03, %00000000, $08    ; Paddle bottom
+    .byte $80, $02, %00000000, $08    ; Paddle top
+    .byte $88, $04, %00000000, $08    ; Paddle middle A
+    .byte $8F, $04, %00000000, $08    ; Paddle middle A
+    .byte $94, $03, %00000000, $08    ; Paddle bottom
 
     ; Player 2
-    .db $80, $02, %00000000, $F0    ; Paddle top
-    .db $88, $04, %00000000, $F0    ; Paddle middle A
-    .db $8F, $04, %00000000, $F0    ; Paddle middle A
-    .db $94, $03, %00000000, $F0    ; Paddle bottom
+    .byte $80, $02, %00000000, $F0    ; Paddle top
+    .byte $88, $04, %00000000, $F0    ; Paddle middle A
+    .byte $8F, $04, %00000000, $F0    ; Paddle middle A
+    .byte $94, $03, %00000000, $F0    ; Paddle bottom
 
 DedBG_Table:
     .word DedBGOne
@@ -326,24 +326,24 @@ DedBG_Table:
 
 ; player 1
 DedBGOne:
-    .db $0A, $00, $25, $CB
-    .db "PLAYER ONE"
-    .db $04, $00, $25, $ED
-    .db "WINS"
-    .db $00
+    .byte $0A, $00, $25, $CB
+    .byte "PLAYER ONE"
+    .byte $04, $00, $25, $ED
+    .byte "WINS"
+    .byte $00
 
 ; player 2
 DedBGTwo:
-    .db $0A, $00, $25, $CB
-    .db "PLAYER TWO"
-    .db $04, $00, $25, $ED
-    .db "WINS"
-    .db $00
+    .byte $0A, $00, $25, $CB
+    .byte "PLAYER TWO"
+    .byte $04, $00, $25, $ED
+    .byte "WINS"
+    .byte $00
 
 ; computer player
 DedBGComp:
-    .db $0F, $00, $25, $C9
-    .db "COMPUTER PLAYER"
-    .db $04, $00, $25, $ED
-    .db "WINS"
-    .db $00
+    .byte $0F, $00, $25, $C9
+    .byte "COMPUTER PLAYER"
+    .byte $04, $00, $25, $ED
+    .byte "WINS"
+    .byte $00

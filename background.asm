@@ -27,7 +27,7 @@ ubLoop:
     ldy #$00    ; byte in the packet
 
     ; Packet length
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta bgLength
     bne ub_ok
 
@@ -38,18 +38,18 @@ ubLoop:
 
 ub_ok:
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta bgFlags
     bit bgFlags
     bvs ubSkipAddr
 
     ; PPU Address
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta $2006
 
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta $2006
 
 ubSkipAddr:
@@ -58,7 +58,7 @@ ubSkipAddr:
 
 ubDataLoop:
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta $2007
     dec bgLength
     bne ubDataLoop
@@ -67,7 +67,7 @@ ubDataLoop:
 
 ubRunLength:
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
 
 ubRunLengthLoop:
     sta $2007
@@ -103,9 +103,9 @@ lbLoop:
     ldy #0
 
     ; Packet length
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta bgLength
-    sta [bgQueue], y
+    sta (bgQueue), y
     bne lb_ok
 
     ; Set the bgWrites flag
@@ -114,20 +114,20 @@ lbLoop:
 
 lb_ok:
     iny
-    lda [bgPointer], y
+    lda (bgPointer), y
     sta bgFlags
-    sta [bgQueue], y
+    sta (bgQueue), y
     bit bgFlags
     bvs lbSkipAddr
 
     ; PPU Address
     iny
-    lda [bgPointer], y
-    sta [bgQueue], y
+    lda (bgPointer), y
+    sta (bgQueue), y
 
     iny
-    lda [bgPointer], y
-    sta [bgQueue], y
+    lda (bgPointer), y
+    sta (bgQueue), y
 
 lbSkipAddr:
     bit bgFlags
@@ -135,8 +135,8 @@ lbSkipAddr:
 
 lbDataLoop:
     iny
-    lda [bgPointer], y
-    sta [bgQueue], y
+    lda (bgPointer), y
+    sta (bgQueue), y
     dec bgLength
     bne lbDataLoop
 
@@ -144,8 +144,8 @@ lbDataLoop:
 
 lbRunLength:
     iny
-    lda [bgPointer], y
-    sta [bgQueue], y
+    lda (bgPointer), y
+    sta (bgQueue), y
 
 lbNextPacket:
     ; Update pointer and queue to next packet

@@ -29,32 +29,32 @@ UpdateScores:
     sta score_ones
     jsr ScoreMath
 
-cont_UpdateScores
+cont_UpdateScores:
 
     ldy #$00
 
     lda #$02
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$00
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$20
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$64
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda score_tens
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda score_ones
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     lda p2Score
     sta score_ones
@@ -62,31 +62,31 @@ cont_UpdateScores
 
     iny
     lda #$02
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$00
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$20
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$7A
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda score_tens
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda score_ones
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     iny
     lda #$00
-    sta [bgQueue], y
+    sta (bgQueue), y
 
     ; increment Queue pointer
     tya

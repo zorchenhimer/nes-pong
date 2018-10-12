@@ -27,24 +27,24 @@ frameCredits:
     lda #BUTTON_A
     sta btnPressedMask
     jsr ButtonPressedP1
-    beq .crB
-    jmp .creditsEnd
+    beq @crB
+    jmp @creditsEnd
 
-.crB:
+@crB:
     lda #BUTTON_B
     sta btnPressedMask
     jsr ButtonPressedP1
-    beq .crSt
-    jmp .creditsEnd
+    beq @crSt
+    jmp @creditsEnd
 
-.crSt:
+@crSt:
     lda #BUTTON_START
     sta btnPressedMask
     jsr ButtonPressedP1
     beq frameEnd
-    jmp .creditsEnd
+    jmp @creditsEnd
 
-.creditsEnd:
+@creditsEnd:
     lda #GS_TITLE
     sta GameState
     inc GSUpdateNeeded

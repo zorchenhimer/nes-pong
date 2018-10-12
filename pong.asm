@@ -1,16 +1,28 @@
-    .inesprg 1      ; 1x 16KB bank of PRG code
-    .ineschr 1      ; 1x 8KB bank of CHR data
-    .inesmap 0      ; mapper 0 = NROM, no bank swapping
-    .inesmir 1      ; background mirroring (ignore for now)
+    .include "nes2header.inc"
+
+nes2mapper 0
+nes2prg 1 * 16 * 1024
+nes2chr 1 * 8 * 1024
+nes2mirror 'V'
+.ifdef PAL
+nes2tv 'P'
+.else
+nes2tv 'N'
+.endif
+nes2end
+
 
     .include "ram.asm"
 
-; Uncomment the following line for PAL (corrects audio)
-;PAL
+.segment "VECTORS"
+    .word NMI
+    .word RESET
+    .word IRQ
 
-    ; Main code
-    .bank 0
-    .org $8000
+.segment "TILES"
+    .incbin "pong.chr"
+
+.segment "PAGE0"
 RESET:
     sei         ; Disable IRQs
     cld         ; Disable decimal mode
@@ -162,13 +174,13 @@ UpdateTitle:
 utitle_stc:
     lda #%11010000
     cmp controller1
-    bne .selectionCheck
+    bne @selectionCheck
 
     lda #GS_CREDITS
     sta GameState
     jmp Credits_Init
 
-.selectionCheck
+@selectionCheck:
     lda TitleSelected
     cmp #$02
     bne titleStartGame
@@ -178,10 +190,10 @@ utitle_stc:
     inc title_sound
     lda title_sound
     cmp #$08
-    bcc .nowrap
+    bcc @nowrap
     lda #0
     sta title_sound
-.nowrap:
+@nowrap:
 
     lda title_sound
     sta sfx_id
@@ -228,7 +240,7 @@ utitleSprite:
     rts
 
 TitleSpritePositions:
-    .db $7F, $8F, $9F
+    .byte $7F, $8F, $9F
 
 ; vblank triggered
 NMI:
@@ -246,9 +258,9 @@ NMI:
     bne nmi_Skip
 
     ; reset the background queue pointer
-    lda #$00
+    lda #<bgBuffer
     sta bgQueue
-    lda #$04
+    lda #>bgBuffer
     sta bgQueue+1
 
     lda GamePaused
@@ -303,7 +315,7 @@ NMI_END:
     sta $2000
     jmp nmi_ScrollDone
 
-nmi_DED
+nmi_DED:
     ; bit 0 here adds 256 to X scroll
     lda #%10010001
     ;lda #%10010000
@@ -367,20 +379,21 @@ IRQ:
     jmp IRQ
 
 ; --------
-    .bank 1
-    .org $E000
+    ;.bank 1
+    ;.org $E000
 
+;.segment "PAGE1"
 PaletteData:
-    .db $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$15,$0F,$0F, $0F,$11,$11,$11
-    .db $0F,$10,$00,$30, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
+    .byte $0F,$34,$14,$0F, $0F,$15,$0F,$05, $0F,$15,$0F,$0F, $0F,$11,$11,$11
+    .byte $0F,$10,$00,$30, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
 
 PausedPalette:
-    .db $0F,$14,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$01,$01,$01
-    .db $0F,$00,$2D,$10, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
+    .byte $0F,$14,$04,$0F, $0F,$15,$0F,$05, $0F,$0A,$0A,$0A, $0F,$01,$01,$01
+    .byte $0F,$00,$2D,$10, $0F,$05,$05,$05, $0F,$0A,$0A,$0A, $0F,$11,$11,$11
 
 CreditsPalette:
-    .db $0F,$30,$0F,$0F, $0F,$0F,$0F,$13, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
-    .db $0F,$30,$13,$0F, $0F,$05,$15,$0F, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
+    .byte $0F,$30,$0F,$0F, $0F,$0F,$0F,$13, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
+    .byte $0F,$30,$13,$0F, $0F,$05,$15,$0F, $0F,$0A,$1A,$0F, $0F,$11,$21,$0F
 
 PauseTable:
     .word PausedAttributes
@@ -388,47 +401,47 @@ PauseTable:
 
 PausedAttributes:
     ; "PAUSED" box
-    ;.db $01, $00, $21, $8C, $06     ; left corner
-    ;.db $06, $C0, $02       ; top line
-    ;.db $01, $40, $07       ; right corner
-    .db $08, $00, $21, $8C, $06, $02, $02, $02, $02, $02, $02, $07
+    ;.byte $01, $00, $21, $8C, $06     ; left corner
+    ;.byte $06, $C0, $02       ; top line
+    ;.byte $01, $40, $07       ; right corner
+    .byte $08, $00, $21, $8C, $06, $02, $02, $02, $02, $02, $02, $07
 
-    ;.db $01, $00, $21, $AC, $04
-    ;.db $06, $C0, $01       ; box bg
-    ;.db $01, $40, $05
-    .db $08, $00, $21, $AC, $04
-    ;.db "PAUSED"
-    .db $24, $25, $26, $27, $28, $29
-    .db $05
+    ;.byte $01, $00, $21, $AC, $04
+    ;.byte $06, $C0, $01       ; box bg
+    ;.byte $01, $40, $05
+    .byte $08, $00, $21, $AC, $04
+    ;.byte "PAUSED"
+    .byte $24, $25, $26, $27, $28, $29
+    .byte $05
 
-    ;.db $01, $00, $21, $CC, $04
-    ;.db $06, $C0, $01       ; box bg
-    ;.db $01, $40, $05
-    .db $08, $00, $21, $CC, $04, $01, $01, $01, $01, $01, $01, $05
+    ;.byte $01, $00, $21, $CC, $04
+    ;.byte $06, $C0, $01       ; box bg
+    ;.byte $01, $40, $05
+    .byte $08, $00, $21, $CC, $04, $01, $01, $01, $01, $01, $01, $05
 
-    ;.db $01, $00, $21, $EC, $08     ; left corner
-    ;.db $06, $C0, $02       ; top line
-    ;.db $01, $40, $09       ; right corner
-    .db $08, $00, $21, $EC, $08, $03, $03, $03, $03, $03, $03, $09
+    ;.byte $01, $00, $21, $EC, $08     ; left corner
+    ;.byte $06, $C0, $02       ; top line
+    ;.byte $01, $40, $09       ; right corner
+    .byte $08, $00, $21, $EC, $08, $03, $03, $03, $03, $03, $03, $09
 
     ; attribute data
-    .db $02, $80, $23, $DB, $55
-    .db $00
+    .byte $02, $80, $23, $DB, $55
+    .byte $00
 
 UnPausedAttributes:
     ; clear "PAUSED" box
-    .db $08, $80, $21, $8C, $00 ; top row
-    .db $08, $80, $21, $AC, $00
-    .db $08, $80, $21, $CC, $00
-    .db $08, $80, $21, $EC, $00
+    .byte $08, $80, $21, $8C, $00 ; top row
+    .byte $08, $80, $21, $AC, $00
+    .byte $08, $80, $21, $CC, $00
+    .byte $08, $80, $21, $EC, $00
 
     ; attribute data
-    .db $02, $80, $23, $DB, $00
-    .db $00
-    ;.db $08, $80, $0F
-    ;.db $30, $C0, $00
-    ;.db $08, $C0, $0F
-    ;.db $00
+    .byte $02, $80, $23, $DB, $00
+    .byte $00
+    ;.byte $08, $80, $0F
+    ;.byte $30, $C0, $00
+    ;.byte $08, $C0, $0F
+    ;.byte $00
 
 
     .ifdef PAL
@@ -436,18 +449,3 @@ UnPausedAttributes:
     .else
     .include "note_table.i"
     .endif
-
-; Vectors (interupts?)
-    .org $FFFA  ; first of three vectors starts here
-    .dw NMI     ; When an NMI happens (start of VBlank) the processor will jump
-                ; to the label NMI:
-
-    .dw RESET   ; When the prossor first turns on or is reset, it will jump to
-                ; the label RESET:
-
-    .dw IRQ       ; external interupt IRQ.  ignored for now.
-
-    ; CHR data
-    .bank 2
-    .org $0000
-    .incbin "pong.chr"
