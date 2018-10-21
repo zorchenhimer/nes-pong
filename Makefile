@@ -12,7 +12,10 @@ NAME = pong
 CHR = pong.chr
 
 # List of all the sources files
-SOURCES = $(NAME).asm
+SOURCES = $(NAME).asm background.asm ball.asm countdown_lookup.asm \
+		  credits.asm credits_ram.asm frame_loop.asm credits_data.i \
+		  input.asm players.asm ram.asm scores.asm sound_engine.asm \
+		  states.asm note_table.i note_table_pal.i nes2header.inc
 
 # misc
 RM = rm
@@ -44,4 +47,4 @@ bin/$(NAME).nes: bin/$(NAME).o $(CHR) $(NESCFG)
 		bin/$(NAME).o
 
 bin/$(NAME).mlb: bin/$(NAME).nes
-	perl.exe ../nes-symbols.pl bin/$(NAME).labels
+	perl.exe ./nes-symbols.pl bin/$(NAME).labels
