@@ -1,6 +1,13 @@
 
-CA = c:/cc65/bin/ca65.exe
-LD = c:/cc65/bin/ld65.exe
+ifeq ($(OS),Windows_NT)
+export PATH := $(PATH);../tools/cc65/bin;../tools/ld65-labels
+else
+export PATH := $(PATH):../tools/cc65/bin:../tools/ld65-labels
+endif
+
+CA = ca65
+LD = ld65
+CL = ld65-labels
 
 # Mapper configuration for linker
 NESCFG = nes_000.cfg
@@ -47,4 +54,4 @@ bin/$(NAME).nes: bin/$(NAME).o $(CHR) $(NESCFG)
 		bin/$(NAME).o
 
 bin/$(NAME).mlb: bin/$(NAME).nes
-	perl.exe ./nes-symbols.pl bin/$(NAME).labels
+	$(CL) bin/$(NAME).nes.db
