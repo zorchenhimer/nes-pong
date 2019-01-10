@@ -4,9 +4,8 @@ I wrote Pong for the NES on stream!
 
 ## Building
 ### Requirements
-- GNU Make
-- [cc65](https://cc65.github.io/)
-- Perl (for converting debugging labels)
+
+See this guide to setup the build environtment: [NES_Build_Environment.md](https://gist.github.com/zorchenhimer/b5e1f30feb082f5a920c6b7e7a072b13)
 
 ### How Do
 
@@ -15,8 +14,6 @@ $ git clone https://github.com/zorchenhimer/nes-pong.git
 $ cd nes-pong
 $ make
 ```
-
-Make sure to check the path for ca65 and ld65 and change them if needed in the `Makefile`.  If you don't want to install Perl, and don't mind not having labels in your emulator's debugger, `bin/$(NAME).mlb` can be removed from the `all` target.
 
 After running `make` you'll have a `bin/` folder that has a bunch of files including the rom, symbols files, and object file.
 
