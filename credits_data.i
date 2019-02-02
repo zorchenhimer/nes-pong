@@ -4,7 +4,7 @@ credits_metadata:
 
 credits_name_table:
     .word credits_name01, credits_name02, credits_name03, credits_name04
-    .word credits_name05
+    .word credits_name05, credits_name06
 credits_nametable_end:
 
 credits_name01:
@@ -26,3 +26,7 @@ credits_name04:
 credits_name05:
     .byte $08
     .byte "Gappajin"
+
+credits_name06:
+    .byte $08
+    .byte "jojoa1997"
